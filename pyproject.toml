@@ -94,7 +94,7 @@ testpaths = [
 site_packages = true
 doc.shell = """\
     mkdir -p build/htmldoc/network
-    pdoc --html --force --config latex_math=True -o build/htmldoc network examples
+    pdoc --html --force --config latex_math=True -o build/htmldoc network
     pyreverse -s0 network -k --colorized -p network -m no --ignore=exceptions.py -d build/htmldoc
     dot -Tpng build/htmldoc/classes_network.dot -o build/htmldoc/network/classes.png
     coverage html -d build/htmldoc/coverage

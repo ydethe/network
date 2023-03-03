@@ -9,6 +9,8 @@ bob = User("bob")
 
 original_text = b"Je suis un poney"
 capsule, ciphertext = alice.encrypt(original_text)
+alice_cleartext = alice.decrypt(capsule, ciphertext)
+assert alice_cleartext == original_text
 
 kfrags = alice.generate_kfrags(bob, threshold=10, shares=10)
 

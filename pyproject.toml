@@ -1,0 +1,110 @@
+[project]
+name = "network"
+dynamic = ["version"]
+description = "Manage contacts, their addresses and company"
+authors = [
+    { name = "Yann de The", email = "ydethe@gmail.com" },
+]
+dependencies = [
+    "umbral>=0.3.0",
+]
+requires-python = ">=3.8,<3.12"
+
+[project.urls]
+"Bug Tracker" = "https://gitlab.com/ydethe/network"
+Homepage = "https://gitlab.com/ydethe/network"
+Source = "https://gitlab.com/ydethe/network"
+
+[tool.pylint.main]
+ignore-patterns = ["kt_*.py"]
+
+[tool.pylint.format]
+max-line-length = 100
+
+[tool.black]
+line-length = 100
+target-version = ['py38']
+force-exclude = 'kt_.*.py'
+
+[project.scripts]
+network = "network.__main__:main"
+
+[project.optional-dependencies]
+[build-system]
+requires = ["pdm-pep517>=1.0.0"]
+build-backend = "pdm.pep517.api"
+
+[tool.pdm.version]
+source = "scm"
+
+[tool.pdm.build]
+includes = [
+    "network/",
+]
+excludes = [
+    "tests",
+    "examples",
+    "build",
+    "dev",
+    "dist",
+    "mockup"
+]
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "ipython~=7.23.1",
+    "black==22.3.0",
+]
+doc = [
+    "pdoc3~=0.10.0",
+    "pylint~=2.15.3",
+]
+test = [
+    "pytest~=7.1.3",
+    "pytest-cov~=3.0.0",
+    "pytest-mpl~=0.16.1",
+    "pytest-xdist~=2.5.0",
+    "pytest-mock~=3.8.2",
+    "pytest-instafail~=0.4.2",
+    "pytest-picked~=0.4.6",
+    "pytest-sugar~=0.9.5",
+    "pytest-html~=3.1.1",
+]
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+    "--html=build/htmldoc/tests/report.html",
+    "--self-contained-html",
+    "--junitxml=build/junit.xml",
+    "--cov-config=tests/.coveragerc",
+    "--cov=network",
+    "--doctest-modules",
+    "--mpl",
+    "--mpl-generate-summary=html",
+    "--mpl-results-always",
+    "--mpl-baseline-path=tests/baseline",
+    "--mpl-results-path=build/htmldoc/tests/results"
+]
+testpaths = [
+    "tests/",
+]
+
+[tool.pdm.scripts]
+site_packages = true
+doc.shell = """\
+    mkdir -p build/htmldoc/network
+    mkdir -p build/htmldoc/examples
+    python -m ipykernel install --user
+    python examples/__init__.py
+    cp examples/quadcopter.png build/htmldoc/examples
+    pdoc --html --force --config latex_math=True --template-dir dev/template -o build/htmldoc network examples
+    pyreverse -s0 network -k --colorized -p network -m no --ignore=exceptions.py,LogFormatter.py,CSVLogger.py,PickleLogger.py,XlsLogger.py -d build/htmldoc
+    dot -Tpng build/htmldoc/classes_network.dot -o build/htmldoc/network/classes.png
+    coverage html -d build/htmldoc/coverage
+"""
+baseline.shell = "pytest --mpl-generate-path=tests/baseline tests"
+inst_doc.shell = """\
+    mkdir -p /var/www/html/network
+    cp -r build/htmldoc/* /var/www/html/network
+"""

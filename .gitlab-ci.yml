@@ -23,7 +23,7 @@ test:
     paths:
       - build/htmldoc
 
-# https://ydethe.gitlab.io/network/htmldoc/network/
+# https://ydethe.gitlab.io/network/network/
 pages:
   stage: deploy
   dependencies:

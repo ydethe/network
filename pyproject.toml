@@ -94,12 +94,8 @@ testpaths = [
 site_packages = true
 doc.shell = """\
     mkdir -p build/htmldoc/network
-    mkdir -p build/htmldoc/examples
-    python -m ipykernel install --user
-    python examples/__init__.py
-    cp examples/quadcopter.png build/htmldoc/examples
-    pdoc --html --force --config latex_math=True --template-dir dev/template -o build/htmldoc network examples
-    pyreverse -s0 network -k --colorized -p network -m no --ignore=exceptions.py,LogFormatter.py,CSVLogger.py,PickleLogger.py,XlsLogger.py -d build/htmldoc
+    pdoc --html --force --config latex_math=True -o build/htmldoc network examples
+    pyreverse -s0 network -k --colorized -p network -m no --ignore=exceptions.py -d build/htmldoc
     dot -Tpng build/htmldoc/classes_network.dot -o build/htmldoc/network/classes.png
     coverage html -d build/htmldoc/coverage
 """

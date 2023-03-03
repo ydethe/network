@@ -1,4 +1,4 @@
-from umbral import pre
+from umbral import PublicKey
 
 from network.User import User
 from network.Proxy import Proxy
@@ -8,6 +8,9 @@ def test_legacy():
     alice = User("alice")
     bob = User("bob")
     ursulas = [Proxy() for _ in range(10)]
+    assert alice.name == "alice"
+    assert isinstance(alice.public_key, PublicKey)
+    assert isinstance(alice.verifying_key, PublicKey)
 
     # ===================================
     # Alice prepares her message to send

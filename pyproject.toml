@@ -26,9 +26,6 @@ line-length = 100
 target-version = ['py38']
 force-exclude = 'kt_.*.py'
 
-[project.scripts]
-network = "network.__main__:main"
-
 [project.optional-dependencies]
 [build-system]
 requires = ["pdm-pep517>=1.0.0"]

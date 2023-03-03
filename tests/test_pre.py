@@ -10,13 +10,13 @@ bob = User("bob")
 original_text = b"Je suis un poney"
 capsule, ciphertext = alice.encrypt(original_text)
 
-kfrags = alice.generate_kfrags(bob, threshold=10, shares=20)
+kfrags = alice.generate_kfrags(bob, threshold=10, shares=10)
 
 # Several Ursulas perform re-encryption, and Bob collects the resulting `cfrags`.
 ursulas = [Proxy() for _ in range(10)]
 
 cfrags = list()  # Bob's cfrag collection
-for u, kfrag in zip(ursulas, kfrags[:10]):
+for u, kfrag in zip(ursulas, kfrags):
     cfrag = u.reencrypt(capsule, kfrag)
     cfrags.append(cfrag)  # Bob collects a cfrag
 

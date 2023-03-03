@@ -16,16 +16,16 @@ from umbral.capsule import Capsule
 class User(object):
     def __init__(self, name):
         self.name = name
-        self.secret_key = SecretKey.random()
-        self.public_key = self.secret_key.public_key()
-        self.signing_key = SecretKey.random()
-        self.verifying_key = self.signing_key.public_key()
+        self.__secret_key = SecretKey.random()
+        self.public_key = self.__secret_key.public_key()
+        self.__signing_key = SecretKey.random()
+        self.verifying_key = self.__signing_key.public_key()
 
     def print_keys(self):
         print(self.name)
-        print("Secret", self.secret_key.to_secret_bytes())
+        print("Secret", b"***")
         print("Public", bytes(self.public_key))
-        print("Signing", self.signing_key.to_secret_bytes())
+        print("Signing", b"***")
         print("Verifying", bytes(self.verifying_key))
 
     def encrypt(self, plaintext: bytes) -> Tuple[Capsule, bytes]:
@@ -33,16 +33,16 @@ class User(object):
         return capsule, ciphertext
 
     def decrypt(self, capsule: Capsule, ciphertext: bytes) -> bytes:
-        cleartext = decrypt_original(self.secret_key, capsule, ciphertext)
+        cleartext = decrypt_original(self.__secret_key, capsule, ciphertext)
         return cleartext
 
     def generate_kfrags(
-        self, rx_pub_key: PublicKey, threshold: int, shares: int
+        self, receiver: "User", threshold: int, shares: int
     ) -> List[VerifiedKeyFrag]:
-        signer = Signer(self.signing_key)
+        signer = Signer(self.__signing_key)
         kfrags = generate_kfrags(
-            delegating_sk=self.secret_key,
-            receiving_pk=rx_pub_key,
+            delegating_sk=self.__secret_key,
+            receiving_pk=receiver.public_key,
             signer=signer,
             threshold=threshold,
             shares=shares,
@@ -51,14 +51,14 @@ class User(object):
 
     def decrypt_reencrypted(
         self,
-        tx_public_key: PublicKey,
+        emitter: "User",
         cfrags: List[VerifiedCapsuleFrag],
         capsule: Capsule,
         ciphertext: bytes,
     ) -> bytes:
         cleartext = pre.decrypt_reencrypted(
-            receiving_sk=self.secret_key,
-            delegating_pk=tx_public_key,
+            receiving_sk=self.__secret_key,
+            delegating_pk=emitter.public_key,
             verified_cfrags=cfrags,
             capsule=capsule,
             ciphertext=ciphertext,

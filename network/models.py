@@ -1,4 +1,5 @@
 from base64 import b64decode
+from datetime import datetime, timedelta
 import os
 
 from sqlalchemy import (
@@ -14,7 +15,8 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import sessionmaker
-from umbral import PublicKey
+from umbral import PublicKey, Signature
+from umbral.hashing import Hash
 
 
 Base = declarative_base()
@@ -50,6 +52,23 @@ class DbUser(Base):
         vkey = PublicKey.from_bytes(vkey_bytes)
 
         return pkey, vkey
+
+    def check_challenge(self, b64_hash: str, b64_sign: str) -> bool:
+        pkey, vkey = self.decodeKeys()
+
+        bdt = b64decode(b64_hash.encode(encoding="ascii"))
+        dt = datetime.fromisoformat(bdt.decode(encoding="ascii"))
+        t_diff = datetime.now() - dt
+        if t_diff > timedelta(seconds=5):
+            return False
+
+        hash = Hash()
+        hash.update(bdt)
+
+        sign_bytes = b64decode(b64_sign.encode(encoding="ascii"))
+        signature = Signature.from_bytes(sign_bytes)
+
+        return signature.verify_digest(vkey, hash)
 
 
 class PersonData(Base):

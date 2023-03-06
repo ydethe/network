@@ -92,21 +92,6 @@ class User(object):
 
         return f"{self.id}:{b64_hash}:{b64_sign}"
 
-    def check_challenge(self, b64_hash: str, b64_sign: str) -> bool:
-        bdt = b64decode(b64_hash.encode(encoding="ascii"))
-        dt = datetime.fromisoformat(bdt.decode(encoding="ascii"))
-        t_diff = datetime.now() - dt
-        if t_diff > timedelta(seconds=5):
-            return False
-
-        hash = Hash()
-        hash.update(bdt)
-
-        sign_bytes = b64decode(b64_sign.encode(encoding="ascii"))
-        signature = Signature.from_bytes(sign_bytes)
-
-        return signature.verify_digest(self.verifying_key, hash)
-
     def encrypt(self, plaintext: bytes) -> Tuple[Capsule, bytes]:
         """Encrypt a message
 

@@ -3,7 +3,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import PlainTextResponse
 from starlette.requests import Request
 
-from .models import con
+from .models import DbUser, con
 from .User import User
 
 
@@ -32,8 +32,10 @@ class ChallengeMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         user_id, b64_hash, b64_sign = self.analyse_header(request.headers)
 
-        user = User(user_id, file_pref="alice_")
-        if user.check_challenge(b64_hash, b64_sign):
+        with con() as session:
+            db_user = session.query(DbUser).filter(DbUser.id == user_id).first()
+
+        if db_user.check_challenge(b64_hash, b64_sign):
             response = await call_next(request)
             return response
         else:

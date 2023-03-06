@@ -1,9 +1,11 @@
 from pathlib import Path
+from datetime import datetime, timedelta
 from typing import List, Tuple
 import struct
 from base64 import b64encode, b64decode
 
 from umbral import (
+    Signature,
     VerifiedCapsuleFrag,
     VerifiedKeyFrag,
     PublicKey,
@@ -15,11 +17,12 @@ from umbral import (
     pre,
 )
 from umbral.capsule import Capsule
+from umbral.hashing import Hash
 
 from .models import DbUser, con
 
 
-class User(DbUser):
+class User(object):
     @classmethod
     def createUser(cls, file_pref: str = ""):
         # Key for encryption
@@ -28,15 +31,18 @@ class User(DbUser):
 
         # Key for authentication
         signing_key = SecretKey.random()
-        cls.saveKeyToFile(private_key, Path(f"{file_pref}signing.key"))
+        cls.saveKeyToFile(signing_key, Path(f"{file_pref}signing.key"))
 
-        db_user = DbUser()
+        db_pkey = b64encode(bytes(private_key.public_key())).decode(encoding="ascii")
+        db_vkey = b64encode(bytes(signing_key.public_key())).decode(encoding="ascii")
+
+        db_user = DbUser(public_key=db_pkey, verifying_key=db_vkey)
         with con() as session:
             session.add(db_user)
             session.commit()
             session.refresh(db_user)
 
-        res = cls(user_id=db_user.id, file_pref=file_pref)
+        res = cls(user_id=db_user.id, file_pref=file_pref, db_user=db_user)
 
         return res
 
@@ -52,21 +58,54 @@ class User(DbUser):
         key = SecretKey.from_bytes(key_bytes)
         return key
 
-    def __init__(self, user_id: int, file_pref: str = ""):
+    def __init__(self, user_id: int, file_pref: str = "", db_user: DbUser = None):
         self.private_key = self.loadKeyFromFile(Path(f"{file_pref}private.key"))
+        self.public_key = self.private_key.public_key()
+
         self.signing_key = self.loadKeyFromFile(Path(f"{file_pref}signing.key"))
+        self.verifying_key = self.signing_key.public_key()
+
         self.id = user_id
 
-        with con() as session:
-            self.db_user = session.query(DbUser).filter(DbUser.id == user_id).first()
+        if db_user is None:
+            with con() as session:
+                db_user: DbUser = session.query(DbUser).filter(DbUser.id == user_id).first()
 
-    @property
-    def public_key(self) -> PublicKey:
-        return self.private_key.public_key()
+        db_pkey, db_vkey = db_user.decodeKeys()
 
-    @property
-    def verifying_key(self) -> PublicKey:
-        return self.signing_key.public_key()
+        if bytes(db_pkey) != bytes(self.public_key):
+            raise AssertionError(f"Corrupted public key")
+
+        if bytes(db_vkey) != bytes(self.verifying_key):
+            raise AssertionError(f"Corrupted verifying key")
+
+    def build_challenge(self) -> str:
+        sdt = datetime.now().isoformat()
+        hash = Hash()
+        hash.update(sdt.encode(encoding="ascii"))
+
+        signer = Signer(self.signing_key)
+        signature = signer.sign_digest(hash)
+
+        b64_hash = b64encode(sdt.encode(encoding="ascii")).decode(encoding="ascii")
+        b64_sign = b64encode(bytes(signature)).decode(encoding="ascii")
+
+        return f"{self.id}:{b64_hash}:{b64_sign}"
+
+    def check_challenge(self, b64_hash: str, b64_sign: str) -> bool:
+        bdt = b64decode(b64_hash.encode(encoding="ascii"))
+        dt = datetime.fromisoformat(bdt.decode(encoding="ascii"))
+        t_diff = datetime.now() - dt
+        if t_diff > timedelta(seconds=5):
+            return False
+
+        hash = Hash()
+        hash.update(bdt)
+
+        sign_bytes = b64decode(b64_sign.encode(encoding="ascii"))
+        signature = Signature.from_bytes(sign_bytes)
+
+        return signature.verify_digest(self.verifying_key, hash)
 
     def encrypt(self, plaintext: bytes) -> Tuple[Capsule, bytes]:
         """Encrypt a message

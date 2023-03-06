@@ -8,6 +8,7 @@ blocksim/version.py
 *.db
 pdm.lock
 alembic/versions/*
+*.key
 
 __pypackages__
 *.parq

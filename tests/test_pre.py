@@ -1,4 +1,5 @@
 from pathlib import Path
+from datetime import datetime
 
 import requests
 from sqlalchemy import create_engine
@@ -51,7 +52,12 @@ def test_legacy():
 def test_person_data(ref_plaintext: str):
     alice = User(user_id=1, file_pref="alice_")
 
-    r = requests.get("http://localhost:3032/person/1/1")
+    challenge_str = alice.build_challenge()
+    r = requests.get("http://localhost:3032/person/1", headers={"Challenge": challenge_str})
+    if r.status_code != 200:
+        print(r.text)
+        return
+
     data = r.json()
 
     capsule, ciphertext = alice.db_bytes_to_encrypted(data["encrypted_data"])
@@ -91,6 +97,6 @@ def test_pre():
 
 
 ref_plaintext = prepare_test()
-test_legacy()
+# test_legacy()
 test_person_data(ref_plaintext=ref_plaintext)
 # test_pre()

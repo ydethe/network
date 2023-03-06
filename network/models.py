@@ -15,7 +15,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import sessionmaker
-from umbral import SecretKey
+from umbral import SecretKey, PublicKey
 
 
 Base = declarative_base()
@@ -31,12 +31,25 @@ class DbUser(Base):
     #: Unique identifier of the session
     id = Column(Integer, primary_key=True, nullable=False)
 
+    public_key = Column(String, nullable=False)
+
+    verifying_key = Column(String, nullable=False)
+
     time_created = Column(DateTime(timezone=True), server_default=func.now())
 
     time_updated = Column(DateTime(timezone=True), onupdate=func.now())
 
     #: List of the related records in person_data table
     person_data = relationship("PersonData", back_populates="user")
+
+    def decodeKeys(self):
+        pkey_bytes = b64decode(self.public_key.encode(encoding="ascii"))
+        pkey = PublicKey.from_bytes(pkey_bytes)
+
+        vkey_bytes = b64decode(self.verifying_key.encode(encoding="ascii"))
+        vkey = PublicKey.from_bytes(vkey_bytes)
+
+        return pkey, vkey
 
 
 class PersonData(Base):

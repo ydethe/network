@@ -2,8 +2,10 @@ import os
 import logging
 
 import uvicorn
+from starlette.middleware import Middleware
 from fastapi import FastAPI
 
+from .authentication_middleware import ChallengeMiddleware
 from .routers import person_data
 
 
@@ -12,6 +14,7 @@ app = FastAPI(
     title="Network API",
     description="API pour accéder à l'annuaire des contacts",
     version="0.1.0",
+    middleware=[Middleware(ChallengeMiddleware)],
 )
 
 app.include_router(person_data.router)

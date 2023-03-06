@@ -1,23 +1,19 @@
-# docker build -t enfants . --network=host
-# docker tag enfants:latest ydethe/enfants:latest
-# docker push ydethe/enfants:latest
+# docker build -t network . --network=host
+# docker tag network:latest ydethe/network:latest
+# docker push ydethe/network:latest
 FROM python:3.9-bullseye
 
-ARG SECRET_KEY
-ARG CSRF_SECRET_KEY
 ARG DATABASE_URI
 ARG HOST
 ARG ROOT_PATH
 ARG NB_WORKERS
-ARG OPENROUTESERVICE_KEY
+ARG PORT
 
-ENV SECRET_KEY $SECRET_KEY
-ENV CSRF_SECRET_KEY $CSRF_SECRET_KEY
 ENV DATABASE_URI $DATABASE_URI
 ENV HOST $HOST
 ENV ROOT_PATH $ROOT_PATH
 ENV NB_WORKERS $NB_WORKERS
-ENV OPENROUTESERVICE_KEY $OPENROUTESERVICE_KEY
+ENV PORT $PORT
 
 SHELL ["/bin/bash", "-c"]
 RUN export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true
@@ -29,5 +25,5 @@ COPY ./dist/*.whl /app/
 WORKDIR /app
 RUN mkdir -p log
 RUN find /app -name "*.whl" -exec pip install {} \;
-EXPOSE 3032
-CMD enfants
+EXPOSE $PORT
+CMD network_server --port $PORT

@@ -1,18 +1,16 @@
 version: "3.4"
 
 services:
-  enfants:
-    image: enfants:latest
+  network:
+    image: network:latest
     ports:
-      - "3032:3032"
+      - "3034:3034"
     environment:
-      SECRET_KEY: b454ca50523997d3e6d10410aece8367b65f48866bc4a38b2073c03e062ab103
-      CSRF_SECRET_KEY: xpz5ytHoPIaGfIUG6yThplb4tu+/tjsUDWgFfUc3NiI=
       ROOT_PATH: /v1
-      DATABASE_URI: postgresql+psycopg2://enfants:enfants@localhost/enfants
-      HOST: https://api.johncloud.fr
+      DATABASE_URI: postgresql+psycopg2://network:network@localhost/network
+      HOST: https://network.johncloud.fr
       NB_WORKERS: 4
-      OPENROUTESERVICE_KEY: 5b3ce3597851110001cf6248f1d3b3fb5b69489b954df2b1842b88d7
+      PORT: 3034
     network_mode: host
   # db:
   #   image: postgres:11.3

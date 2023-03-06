@@ -3,13 +3,15 @@ from pathlib import Path
 
 import requests
 from sqlalchemy import create_engine
+from fastapi.testclient import TestClient
 
 from network.User import User
 from network.Proxy import Proxy
 from network import models
+from network.main import app
 
 
-def prepare_test():
+def prepare_test(ref_plaintext):
     db_uri = os.environ.get("DATABASE_URI", "tests/test_data.db")
 
     default_db_uri = Path("tests/test_data.db")
@@ -23,7 +25,6 @@ def prepare_test():
     alice = User.createUser(config_file=Path("alice.key"))
     bob = User.createUser(config_file=Path("bob.key"))
 
-    ref_plaintext = "Président de la République Française"
     capsule, ciphertext = alice.encrypt(ref_plaintext.encode())
 
     data = models.PersonData(
@@ -36,8 +37,9 @@ def prepare_test():
     with models.con() as session:
         session.add(data)
         session.commit()
+        session.refresh(data)
 
-    return ref_plaintext
+    return data.id
 
 
 def test_legacy():
@@ -53,17 +55,25 @@ def test_legacy():
 
 
 def test_person_data(ref_plaintext: str):
+    client = TestClient(app)
+
     alice = User(config_file=Path("alice.key"))
 
     challenge_str = alice.build_challenge()
-    r = requests.get(
-        f"http://localhost:3034/person/{alice.id}", headers={"Challenge": challenge_str}
-    )
+    r = client.get("/person/", headers={"Challenge": challenge_str})
     if r.status_code != 200:
         print(r.text)
         return
 
     data = r.json()
+    person_id = data[0]
+
+    r = client.get(f"/person/{person_id}", headers={"Challenge": challenge_str})
+    if r.status_code != 200:
+        print(r.text)
+        return
+
+    data = r.json()[0]
 
     capsule, ciphertext = alice.db_bytes_to_encrypted(data["encrypted_data"])
 
@@ -101,7 +111,8 @@ def test_pre():
     assert bob_cleartext == original_text
 
 
-ref_plaintext = prepare_test()
-# test_legacy()
-test_person_data(ref_plaintext=ref_plaintext)
+ref_plaintext = "Président de la République Française"
+data_id = prepare_test(ref_plaintext)
+test_legacy()
+test_person_data(ref_plaintext)
 # test_pre()

@@ -6,14 +6,26 @@ from . import models
 from . import schemas
 
 
-def get_person_data(db: Session, user_id: int, person_id: int) -> schemas.PersonDataModel:
-    ores: models.PersonData = (
+def list_persons(db: Session, user_id: int) -> List[int]:
+    lores = (
+        db.query(models.PersonData)
+        .filter(models.PersonData.user_id == user_id)
+        .distinct(models.PersonData.person_id)
+        .all()
+    )
+    ores: models.PersonData
+    res = [ores.person_id for ores in lores]
+    return res
+
+
+def get_person_data(db: Session, user_id: int, person_id: int) -> List[schemas.PersonDataModel]:
+    lores = (
         db.query(models.PersonData)
         .filter(models.PersonData.user_id == user_id)
         .filter(models.PersonData.person_id == person_id)
-        .first()
+        .all()
     )
-    res = schemas.PersonDataModel.fromORM(ores)
+    res = [schemas.PersonDataModel.fromORM(ores) for ores in lores]
     return res
 
 

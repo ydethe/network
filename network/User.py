@@ -24,14 +24,12 @@ from .models import DbUser, con
 
 class User(object):
     @classmethod
-    def createUser(cls, file_pref: str = ""):
+    def createUser(cls: "User", config_file: Path = Path("network.key")):
         # Key for encryption
         private_key = SecretKey.random()
-        cls.saveKeyToFile(private_key, Path(f"{file_pref}private.key"))
 
         # Key for authentication
         signing_key = SecretKey.random()
-        cls.saveKeyToFile(signing_key, Path(f"{file_pref}signing.key"))
 
         db_pkey = b64encode(bytes(private_key.public_key())).decode(encoding="ascii")
         db_vkey = b64encode(bytes(signing_key.public_key())).decode(encoding="ascii")
@@ -42,14 +40,33 @@ class User(object):
             session.commit()
             session.refresh(db_user)
 
-        res = cls(user_id=db_user.id, file_pref=file_pref, db_user=db_user)
+        cls.writeConfigurationFile(db_user.id, private_key, signing_key, config_file)
+        res = cls(config_file, db_user=db_user)
 
         return res
 
     @classmethod
-    def saveKeyToFile(cls, key: SecretKey, path: Path):
+    def writeConfigurationFile(
+        cls,
+        user_id: int,
+        private_key: SecretKey,
+        signing_key: SecretKey,
+        path: Path = Path("network.key"),
+    ):
+        pkey = private_key.to_secret_bytes()
+        skey = signing_key.to_secret_bytes()
+
+        fmt = "<II" + len(pkey) * "B" + "I" + len(skey) * "B"
+        dat = struct.pack(
+            fmt,
+            user_id,
+            len(pkey),
+            *pkey,
+            len(skey),
+            *skey,
+        )
         with open(path, "wb") as f:
-            f.write(key.to_secret_bytes())
+            f.write(dat)
 
     @classmethod
     def loadKeyFromFile(cls, path: Path) -> SecretKey:
@@ -58,11 +75,19 @@ class User(object):
         key = SecretKey.from_bytes(key_bytes)
         return key
 
-    def __init__(self, user_id: int, file_pref: str = "", db_user: DbUser = None):
-        self.private_key = self.loadKeyFromFile(Path(f"{file_pref}private.key"))
+    def __init__(self, config_file: Path = Path("network.key"), db_user: DbUser = None):
+        with open(config_file, "rb") as f:
+            dat = f.read()
+
+        user_id, pkey_len = struct.unpack_from("<II", dat, offset=0)
+        pkey_bytes = dat[8 : 8 + pkey_len]
+        skey_len = struct.unpack_from("<I", dat, offset=8 + pkey_len)
+        skey_bytes = dat[8 + pkey_len + 4 + skey_len : 8 + pkey_len + 4 + skey_len + skey_len]
+
+        self.private_key = SecretKey.from_bytes(pkey_bytes)
         self.public_key = self.private_key.public_key()
 
-        self.signing_key = self.loadKeyFromFile(Path(f"{file_pref}signing.key"))
+        self.signing_key = SecretKey.from_bytes(skey_bytes)
         self.verifying_key = self.signing_key.public_key()
 
         self.id = user_id

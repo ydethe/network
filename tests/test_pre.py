@@ -20,8 +20,8 @@ def prepare_test():
     target_metadata = models.Base.metadata
     target_metadata.create_all(engine)
 
-    alice = User.createUser(file_pref="alice_")
-    bob = User.createUser(file_pref="bob_")
+    alice = User.createUser(config_file=Path("alice.key"))
+    bob = User.createUser(config_file=Path("bob.key"))
 
     ref_plaintext = "Président de la République Française"
     capsule, ciphertext = alice.encrypt(ref_plaintext.encode())
@@ -41,7 +41,7 @@ def prepare_test():
 
 
 def test_legacy():
-    alice = User(user_id=1, file_pref="alice_")
+    alice = User(config_file=Path("alice.key"))
 
     # ===================================
     # Alice prepares her message to send
@@ -53,10 +53,12 @@ def test_legacy():
 
 
 def test_person_data(ref_plaintext: str):
-    alice = User(user_id=1, file_pref="alice_")
+    alice = User(config_file=Path("alice.key"))
 
     challenge_str = alice.build_challenge()
-    r = requests.get("http://localhost:3034/person/1", headers={"Challenge": challenge_str})
+    r = requests.get(
+        f"http://localhost:3034/person/{alice.id}", headers={"Challenge": challenge_str}
+    )
     if r.status_code != 200:
         print(r.text)
         return

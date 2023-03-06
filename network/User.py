@@ -81,7 +81,7 @@ class User(object):
 
         user_id, pkey_len = struct.unpack_from("<II", dat, offset=0)
         pkey_bytes = dat[8 : 8 + pkey_len]
-        skey_len = struct.unpack_from("<I", dat, offset=8 + pkey_len)
+        skey_len, = struct.unpack_from("<I", dat, offset=8 + pkey_len)
         skey_bytes = dat[8 + pkey_len + 4 + skey_len : 8 + pkey_len + 4 + skey_len + skey_len]
 
         self.private_key = SecretKey.from_bytes(pkey_bytes)

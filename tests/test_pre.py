@@ -2,20 +2,21 @@ from pathlib import Path
 from umbral import PublicKey
 from sqlalchemy import create_engine
 
+from network.User import User
 from network.Proxy import Proxy
 from network import models
 
 
 def prepare_test():
-    db_url=Path("tests/test_data.db")
+    db_url = Path("tests/test_data.db")
     if db_url.exists():
         db_url.unlink()
     engine = create_engine(f"sqlite:///{db_url}", echo=False)
     target_metadata = models.Base.metadata
     target_metadata.create_all(engine)
 
-    alice = models.User.createUser()
-    bob = models.User.createUser()
+    alice = models.DbUser.createUser()
+    bob = models.DbUser.createUser()
 
     with models.con() as session:
         session.add(alice)
@@ -25,7 +26,8 @@ def prepare_test():
 
 def test_legacy():
     with models.con() as session:
-        alice=session.query(models.User).first()
+        db_user = session.query(models.DbUser).first()
+        alice = User.fromDatabaseUser(db_user)
 
     # ===================================
     # Alice prepares her message to send
@@ -38,7 +40,7 @@ def test_legacy():
 
 def test_pre():
     with models.con() as session:
-        alice,bob=session.query(models.User).all()
+        alice, bob = session.query(models.DbUser).all()
 
     ursulas = [Proxy() for _ in range(10)]
 
@@ -67,4 +69,4 @@ def test_pre():
 
 prepare_test()
 test_legacy()
-test_pre()
+# test_pre()

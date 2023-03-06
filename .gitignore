@@ -5,6 +5,9 @@ blocksim/classes.png
 tests/quadri.csv
 blocksim/version.py
 .pdm.toml
+*.db
+pdm.lock
+alembic/versions/*
 
 __pypackages__
 *.parq

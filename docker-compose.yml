@@ -1,5 +1,8 @@
 version: "3.4"
 
+# CREATE ROLE network LOGIN PASSWORD 'network';
+# GRANT ALL PRIVILEGES ON DATABASE network TO network;
+
 services:
   network:
     image: network:latest

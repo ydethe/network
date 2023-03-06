@@ -1,3 +1,6 @@
+from base64 import b64encode, b64decode
+from pathlib import Path
+
 from sqlalchemy import (
     Column,
     ForeignKey,
@@ -28,30 +31,12 @@ class DbUser(Base):
     #: Unique identifier of the session
     id = Column(Integer, primary_key=True, nullable=False)
 
-    private_key = Column(LargeBinary, nullable=False)
-
-    signing_key = Column(LargeBinary, nullable=False)
-
     time_created = Column(DateTime(timezone=True), server_default=func.now())
 
     time_updated = Column(DateTime(timezone=True), onupdate=func.now())
 
     #: List of the related records in person_data table
     person_data = relationship("PersonData", back_populates="user")
-
-    @classmethod
-    def createUser(cls):
-        # Key for encryption
-        private_key = SecretKey.random()
-
-        # Key for authentication
-        signing_key = SecretKey.random()
-
-        user = cls(
-            private_key=private_key.to_secret_bytes(), signing_key=signing_key.to_secret_bytes()
-        )
-
-        return user
 
 
 class PersonData(Base):
@@ -71,7 +56,7 @@ class PersonData(Base):
 
     data_type = Column(String(32), nullable=False)
 
-    encrypted_data = Column(LargeBinary, nullable=False)
+    encrypted_data = Column(String, nullable=False)
 
     UniqueConstraint(
         user_id,

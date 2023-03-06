@@ -8,7 +8,7 @@ class PersonDataModel(BaseModel):
     user_id: int
     person_id: int
     data_type: str
-    encrypted_data: bytes
+    encrypted_data: str
 
     @classmethod
     def fromORM(cls, obj: models.PersonData):

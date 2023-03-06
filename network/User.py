@@ -1,4 +1,7 @@
+from pathlib import Path
 from typing import List, Tuple
+import struct
+from base64 import b64encode, b64decode
 
 from umbral import (
     VerifiedCapsuleFrag,
@@ -13,23 +16,57 @@ from umbral import (
 )
 from umbral.capsule import Capsule
 
-from .models import DbUser
+from .models import DbUser, con
 
 
 class User(DbUser):
     @classmethod
-    def fromDatabaseUser(cls, db_user: DbUser) -> "User":
-        pass
+    def createUser(cls, file_pref: str = ""):
+        # Key for encryption
+        private_key = SecretKey.random()
+        cls.saveKeyToFile(private_key, Path(f"{file_pref}private.key"))
+
+        # Key for authentication
+        signing_key = SecretKey.random()
+        cls.saveKeyToFile(private_key, Path(f"{file_pref}signing.key"))
+
+        db_user = DbUser()
+        with con() as session:
+            session.add(db_user)
+            session.commit()
+            session.refresh(db_user)
+
+        res = cls(user_id=db_user.id, file_pref=file_pref)
+
+        return res
+
+    @classmethod
+    def saveKeyToFile(cls, key: SecretKey, path: Path):
+        with open(path, "wb") as f:
+            f.write(key.to_secret_bytes())
+
+    @classmethod
+    def loadKeyFromFile(cls, path: Path) -> SecretKey:
+        with open(path, "rb") as f:
+            key_bytes = f.read()
+        key = SecretKey.from_bytes(key_bytes)
+        return key
+
+    def __init__(self, user_id: int, file_pref: str = ""):
+        self.private_key = self.loadKeyFromFile(Path(f"{file_pref}private.key"))
+        self.signing_key = self.loadKeyFromFile(Path(f"{file_pref}signing.key"))
+        self.id = user_id
+
+        with con() as session:
+            self.db_user = session.query(DbUser).filter(DbUser.id == user_id).first()
 
     @property
     def public_key(self) -> PublicKey:
-        private_key = SecretKey.from_bytes(self.private_key)
-        return private_key.public_key()
+        return self.private_key.public_key()
 
     @property
     def verifying_key(self) -> PublicKey:
-        signing_key = SecretKey.from_bytes(self.signing_key)
-        return signing_key.public_key()
+        return self.signing_key.public_key()
 
     def encrypt(self, plaintext: bytes) -> Tuple[Capsule, bytes]:
         """Encrypt a message
@@ -42,9 +79,34 @@ class User(DbUser):
             The ciphertext
 
         """
-        private_key = SecretKey.from_bytes(self.private_key)
-        public_key = private_key.public_key()
+        public_key = self.private_key.public_key()
         capsule, ciphertext = encrypt(public_key, plaintext)
+
+        return capsule, ciphertext
+
+    def encrypted_to_db_bytes(self, capsule: Capsule, ciphertext: bytes) -> str:
+        caps_sze = capsule.serialized_size()
+        ciph_sze = len(ciphertext)
+
+        dat = struct.pack(
+            "<I" + caps_sze * "B" + "I" + ciph_sze * "B",
+            caps_sze,
+            *bytes(capsule),
+            ciph_sze,
+            *ciphertext,
+        )
+        b64data = b64encode(dat).decode(encoding="ascii")
+        return b64data
+
+    def db_bytes_to_encrypted(self, b64data: str) -> Tuple[Capsule, bytes]:
+        dat = b64decode(b64data.encode(encoding="ascii"))
+        (caps_sze,) = struct.unpack_from("<I", dat, offset=0)
+        (ciph_sze,) = struct.unpack_from("<I", dat, offset=4 + caps_sze)
+        caps_bytes = dat[4 : 4 + caps_sze]
+        ciphertext = dat[8 + caps_sze : 8 + caps_sze + ciph_sze]
+
+        capsule = Capsule.from_bytes(caps_bytes)
+
         return capsule, ciphertext
 
     def decrypt(self, capsule: Capsule, ciphertext: bytes) -> bytes:
@@ -58,8 +120,7 @@ class User(DbUser):
             The plaintext message
 
         """
-        private_key = SecretKey.from_bytes(self.private_key)
-        cleartext = decrypt_original(private_key, capsule, ciphertext)
+        cleartext = decrypt_original(self.private_key, capsule, ciphertext)
         return cleartext
 
     def generate_kfrags(
@@ -76,11 +137,9 @@ class User(DbUser):
             A list of kfrags
 
         """
-        signing_key = SecretKey.from_bytes(self.signing_key)
-        private_key = SecretKey.from_bytes(self.private_key)
-        signer = Signer(signing_key)
+        signer = Signer(self.signing_key)
         kfrags = generate_kfrags(
-            delegating_sk=private_key,
+            delegating_sk=self.private_key,
             receiving_pk=rx_public_key,
             signer=signer,
             threshold=threshold,
@@ -107,9 +166,8 @@ class User(DbUser):
             The plaintext message
 
         """
-        private_key = SecretKey.from_bytes(self.private_key)
         cleartext = pre.decrypt_reencrypted(
-            receiving_sk=private_key,
+            receiving_sk=self.private_key,
             delegating_pk=tx_public_key,
             verified_cfrags=cfrags,
             capsule=capsule,

@@ -1,5 +1,6 @@
 from pathlib import Path
-from umbral import PublicKey
+
+import requests
 from sqlalchemy import create_engine
 
 from network.User import User
@@ -15,19 +16,28 @@ def prepare_test():
     target_metadata = models.Base.metadata
     target_metadata.create_all(engine)
 
-    alice = models.DbUser.createUser()
-    bob = models.DbUser.createUser()
+    alice = User.createUser(file_pref="alice_")
+    bob = User.createUser(file_pref="bob_")
+
+    ref_plaintext = "Président de la République Française"
+    capsule, ciphertext = alice.encrypt(ref_plaintext.encode())
+
+    data = models.PersonData(
+        user_id=alice.id,
+        person_id=1,
+        data_type="name",
+        encrypted_data=alice.encrypted_to_db_bytes(capsule, ciphertext),
+    )
 
     with models.con() as session:
-        session.add(alice)
-        session.add(bob)
+        session.add(data)
         session.commit()
+
+    return ref_plaintext
 
 
 def test_legacy():
-    with models.con() as session:
-        db_user = session.query(models.DbUser).first()
-        alice = User.fromDatabaseUser(db_user)
+    alice = User(user_id=1, file_pref="alice_")
 
     # ===================================
     # Alice prepares her message to send
@@ -36,6 +46,19 @@ def test_legacy():
     capsule, ciphertext = alice.encrypt(original_text)
     alice_cleartext = alice.decrypt(capsule, ciphertext)
     assert alice_cleartext == original_text
+
+
+def test_person_data(ref_plaintext: str):
+    alice = User(user_id=1, file_pref="alice_")
+
+    r = requests.get("http://localhost:3032/person/1/1")
+    data = r.json()
+
+    capsule, ciphertext = alice.db_bytes_to_encrypted(data["encrypted_data"])
+
+    plaintext = alice.decrypt(capsule, ciphertext)
+
+    assert ref_plaintext == plaintext.decode()
 
 
 def test_pre():
@@ -67,6 +90,7 @@ def test_pre():
     assert bob_cleartext == original_text
 
 
-prepare_test()
+ref_plaintext = prepare_test()
 test_legacy()
+test_person_data(ref_plaintext=ref_plaintext)
 # test_pre()

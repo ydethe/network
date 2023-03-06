@@ -1,16 +1,31 @@
+from pathlib import Path
 from umbral import PublicKey
+from sqlalchemy import create_engine
 
-from network.User import User
 from network.Proxy import Proxy
+from network import models
+
+
+def prepare_test():
+    db_url=Path("tests/test_data.db")
+    if db_url.exists():
+        db_url.unlink()
+    engine = create_engine(f"sqlite:///{db_url}", echo=False)
+    target_metadata = models.Base.metadata
+    target_metadata.create_all(engine)
+
+    alice = models.User.createUser()
+    bob = models.User.createUser()
+
+    with models.con() as session:
+        session.add(alice)
+        session.add(bob)
+        session.commit()
 
 
 def test_legacy():
-    alice = User("alice")
-    bob = User("bob")
-    ursulas = [Proxy() for _ in range(10)]
-    assert alice.name == "alice"
-    assert isinstance(alice.public_key, PublicKey)
-    assert isinstance(alice.verifying_key, PublicKey)
+    with models.con() as session:
+        alice=session.query(models.User).first()
 
     # ===================================
     # Alice prepares her message to send
@@ -22,8 +37,9 @@ def test_legacy():
 
 
 def test_pre():
-    alice = User("alice")
-    bob = User("bob")
+    with models.con() as session:
+        alice,bob=session.query(models.User).all()
+
     ursulas = [Proxy() for _ in range(10)]
 
     # ===================================
@@ -47,3 +63,8 @@ def test_pre():
     # =====================================
     bob_cleartext = bob.decrypt_reencrypted(alice.public_key, cfrags, capsule, ciphertext)
     assert bob_cleartext == original_text
+
+
+prepare_test()
+test_legacy()
+test_pre()

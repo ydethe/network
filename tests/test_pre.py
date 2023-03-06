@@ -31,7 +31,7 @@ def test_pre():
     # ===================================
     original_text = b"Je suis un poney"
     capsule, ciphertext = alice.encrypt(original_text)
-    kfrags = alice.generate_kfrags(bob, threshold=10, shares=10)
+    kfrags = alice.generate_kfrags(bob.public_key, threshold=10, shares=10)
 
     # ===================================
     # The proxies perform reencryption
@@ -45,5 +45,5 @@ def test_pre():
     # =====================================
     # Bob decrypts the reencrypted message
     # =====================================
-    bob_cleartext = bob.decrypt_reencrypted(alice, cfrags, capsule, ciphertext)
+    bob_cleartext = bob.decrypt_reencrypted(alice.public_key, cfrags, capsule, ciphertext)
     assert bob_cleartext == original_text

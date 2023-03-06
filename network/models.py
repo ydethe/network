@@ -1,5 +1,5 @@
-from base64 import b64encode, b64decode
-from pathlib import Path
+from base64 import b64decode
+import os
 
 from sqlalchemy import (
     Column,
@@ -7,7 +7,6 @@ from sqlalchemy import (
     Integer,
     String,
     UniqueConstraint,
-    LargeBinary,
     DateTime,
     create_engine,
 )
@@ -15,12 +14,13 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import sessionmaker
-from umbral import SecretKey, PublicKey
+from umbral import PublicKey
 
 
 Base = declarative_base()
 
-engine = create_engine("sqlite:///tests/test_data.db", echo=False, future=True)
+db_uri = os.environ.get("DATABASE_URI", "sqlite:///tests/test_data.db")
+engine = create_engine(db_uri, echo=False, future=True)
 con = sessionmaker(engine)
 
 

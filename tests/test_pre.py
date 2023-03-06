@@ -1,5 +1,5 @@
+import os
 from pathlib import Path
-from datetime import datetime
 
 import requests
 from sqlalchemy import create_engine
@@ -10,10 +10,13 @@ from network import models
 
 
 def prepare_test():
-    db_url = Path("tests/test_data.db")
-    if db_url.exists():
-        db_url.unlink()
-    engine = create_engine(f"sqlite:///{db_url}", echo=False)
+    db_uri = os.environ.get("DATABASE_URI", "tests/test_data.db")
+
+    default_db_uri = Path("tests/test_data.db")
+    if default_db_uri.exists():
+        default_db_uri.unlink()
+
+    engine = create_engine(db_uri, echo=False)
     target_metadata = models.Base.metadata
     target_metadata.create_all(engine)
 

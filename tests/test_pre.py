@@ -53,7 +53,7 @@ def test_person_data(ref_plaintext: str):
     alice = User(user_id=1, file_pref="alice_")
 
     challenge_str = alice.build_challenge()
-    r = requests.get("http://localhost:3032/person/1", headers={"Challenge": challenge_str})
+    r = requests.get("http://localhost:3034/person/1", headers={"Challenge": challenge_str})
     if r.status_code != 200:
         print(r.text)
         return

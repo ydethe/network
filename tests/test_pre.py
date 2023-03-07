@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
+import time
 
-import requests
 from sqlalchemy import create_engine
 from fastapi.testclient import TestClient
 
@@ -11,7 +11,7 @@ from network.backend import models
 from network.backend.main import app
 
 
-def prepare_test(ref_plaintext: str = "Président de la République Française"):
+def test_prepare(ref_plaintext: str = "Président de la République Française"):
     db_uri = os.environ.get("DATABASE_URI", "sqlite:///tests/test_data.db")
 
     default_db_uri = Path("tests/test_data.db")
@@ -27,12 +27,12 @@ def prepare_test(ref_plaintext: str = "Président de la République Française")
     alice: User = User.createUser()
     r = client.post("/users/", json=alice.to_json())
     alice.id = r.json()["id"]
-    alice.writeConfigurationFile(Path("alice.key"))
+    alice.writeConfigurationFile(Path("alice.topsecret"))
 
     bob: User = User.createUser()
     r = client.post("/users/", json=bob.to_json())
     bob.id = r.json()["id"]
-    bob.writeConfigurationFile(Path("bob.key"))
+    bob.writeConfigurationFile(Path("bob.topsecret"))
 
     capsule, ciphertext = alice.encrypt(ref_plaintext.encode())
 
@@ -48,7 +48,7 @@ def prepare_test(ref_plaintext: str = "Président de la République Française")
 
 
 def test_legacy():
-    alice = User(config_file=Path("alice.key"))
+    alice = User(config_file=Path("alice.topsecret"))
 
     # ===================================
     # Alice prepares her message to send
@@ -62,7 +62,7 @@ def test_legacy():
 def test_person_data(ref_plaintext: str = "Président de la République Française"):
     client = TestClient(app)
 
-    alice = User(config_file=Path("alice.key"))
+    alice = User(config_file=Path("alice.topsecret"))
 
     challenge_str = alice.build_challenge()
     r = client.get("/person/", headers={"Challenge": challenge_str})
@@ -87,9 +87,9 @@ def test_person_data(ref_plaintext: str = "Président de la République Françai
     assert ref_plaintext == plaintext.decode()
 
 
-def ntest_pre():
-    with models.con() as session:
-        alice, bob = session.query(models.DbUser).all()
+def test_pre():
+    alice = User(config_file=Path("alice.topsecret"))
+    bob = User(config_file=Path("bob.topsecret"))
 
     ursulas = [Proxy() for _ in range(10)]
 
@@ -116,8 +116,34 @@ def ntest_pre():
     assert bob_cleartext == original_text
 
 
-ref_plaintext = "Président de la République Française"
-data_id = prepare_test(ref_plaintext)
-test_legacy()
-test_person_data(ref_plaintext)
-# test_pre()
+def test_errors():
+    client = TestClient(app)
+
+    alice = User(config_file=Path("alice.topsecret"))
+
+    r = client.get("/person/")
+    assert r.status_code == 401
+    assert r.json()["detail"] == "No challenge provided with the request"
+
+    r = client.get("/person/", headers={"Challenge": "false"})
+    assert r.status_code == 401
+    assert (
+        "Invalid format for challenge. Shall be <user_id>:<b64_hash>:<b64_sign>"
+        in r.json()["detail"]
+    )
+
+    challenge_str = alice.build_challenge()
+    time.sleep(6)
+    r = client.get("/person/", headers={"Challenge": challenge_str})
+    assert r.status_code == 401
+    assert "Failed solving the challenge" in r.json()["detail"]
+
+
+if __name__ == "__main__":
+    ref_plaintext = "Président de la République Française"
+
+    test_prepare(ref_plaintext)
+    # test_legacy()
+    # test_person_data(ref_plaintext)
+    # test_pre()
+    test_errors()

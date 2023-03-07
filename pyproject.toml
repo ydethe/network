@@ -26,7 +26,7 @@ Source = "https://gitlab.com/ydethe/network"
 Documentation = "https://ydethe.gitlab.io/network/network/"
 
 [project.scripts]
-network_server = "network.main:main"
+network_server = "network.backend.main:main"
 
 [tool.pylint.main]
 ignore-patterns = ["kt_*.py"]

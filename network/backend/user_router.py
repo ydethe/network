@@ -1,6 +1,4 @@
-from typing import List
-from starlette.responses import JSONResponse
-from fastapi import APIRouter, Depends, HTTPException, Path, Request
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from . import schemas

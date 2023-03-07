@@ -1,12 +1,11 @@
 from typing import List
-from starlette.responses import JSONResponse
 from fastapi import APIRouter, Depends, HTTPException, Path, Request
 from sqlalchemy.orm import Session
 
 from . import schemas
 from . import crud
 from .models import engine
-from .auth_depend import ChallengeMiddleware
+from .auth_depend import challenge_auth
 
 
 def get_db():
@@ -29,14 +28,8 @@ def read_person_data(
     request: Request,
     person_id: int = Path(description="ID of the person to retrieve"),
     db: Session = Depends(get_db),
+    user_id: int = Depends(challenge_auth),
 ):
-    response = ChallengeMiddleware.analyse_header(request.headers)
-    if "error" in response.keys():
-        response = JSONResponse(response)
-        return response
-
-    user_id = response["user_id"]
-
     db_data = crud.get_person_data(db, user_id, person_id)
     if db_data is None:
         raise HTTPException(status_code=404, detail="Person data not found")
@@ -51,14 +44,8 @@ def read_person_data(
 def list_persons(
     request: Request,
     db: Session = Depends(get_db),
+    user_id: int = Depends(challenge_auth),
 ):
-    response = ChallengeMiddleware.analyse_header(request.headers)
-    if "error" in response.keys():
-        response = JSONResponse(response)
-        return response
-
-    user_id = response["user_id"]
-
     db_data = crud.list_persons(db, user_id)
     if db_data is None:
         raise HTTPException(status_code=404, detail="Person data not found")
@@ -74,12 +61,8 @@ def create_person_data(
     request: Request,
     item: schemas.PersonDataModel = None,
     db: Session = Depends(get_db),
+    user_id: int = Depends(challenge_auth),
 ):
-    response = ChallengeMiddleware.analyse_header(request.headers)
-    if "error" in response.keys():
-        response = JSONResponse(response)
-        return response
-
-    item.user_id = response["user_id"]
+    item.user_id = user_id
 
     return crud.create_person_data(db=db, item=item)

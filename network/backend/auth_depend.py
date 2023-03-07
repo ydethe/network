@@ -1,12 +1,12 @@
-from typing import Tuple
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import JSONResponse
-from starlette.requests import Request
+from fastapi import Request, HTTPException
 
 from .models import DbUser, con
 
 
-class ChallengeMiddleware(BaseHTTPMiddleware):
+class ChallengeAuthentication(object):
+    def __init__(self, challenge_timeout: float):
+        self.challenge_timeout = challenge_timeout
+
     @staticmethod
     def analyse_header(headers: dict) -> dict:
         key = "challenge"
@@ -19,7 +19,7 @@ class ChallengeMiddleware(BaseHTTPMiddleware):
 
         if challenge.count(":") != 2:
             response = {
-                "error": 402,
+                "error": 401,
                 "message": f"Invalid format for challenge. Shall be <user_id>:<b64_hash>:<b64_sign>. Got {challenge}",
             }
             return response
@@ -30,15 +30,10 @@ class ChallengeMiddleware(BaseHTTPMiddleware):
 
         return response
 
-    async def dispatch(self, request: Request, call_next):
-        if not request.url.path.startswith("/person/"):
-            response = await call_next(request)
-            return response
-
+    async def __call__(self, request: Request) -> int:
         response = self.analyse_header(request.headers)
         if "error" in response.keys():
-            response = JSONResponse(response)
-            return response
+            raise HTTPException(status_code=response["error"], detail=response["message"])
 
         user_id = response["user_id"]
         b64_hash = response["b64_hash"]
@@ -47,9 +42,10 @@ class ChallengeMiddleware(BaseHTTPMiddleware):
         with con() as session:
             db_user = session.query(DbUser).filter(DbUser.id == user_id).first()
 
-        if db_user.check_challenge(b64_hash, b64_sign):
-            response = await call_next(request)
-            return response
+        if db_user.check_challenge(b64_hash, b64_sign, timeout=self.challenge_timeout):
+            return user_id
         else:
-            response = JSONResponse({"error": 403, "message": f"Failed solving the challenge"})
-            return response
+            raise HTTPException(status_code=401, detail="Failed solving the challenge")
+
+
+challenge_auth = ChallengeAuthentication(challenge_timeout=5)

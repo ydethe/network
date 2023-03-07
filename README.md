@@ -12,3 +12,5 @@ This will create the doc in build/htmldoc
 
 A few guidelines for updating the doc
 https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html
+
+Documentation : https://ydethe.gitlab.io/network/network/

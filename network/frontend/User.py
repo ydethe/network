@@ -1,11 +1,10 @@
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import List, Tuple
 import struct
 from base64 import b64encode, b64decode
 
 from umbral import (
-    Signature,
     VerifiedCapsuleFrag,
     VerifiedKeyFrag,
     PublicKey,
@@ -49,7 +48,7 @@ class User(object):
 
     def writeConfigurationFile(
         self,
-        path: Path = Path("network.key"),
+        path: Path = Path("network.topsecret"),
     ):
         pkey = self.private_key.to_secret_bytes()
         skey = self.signing_key.to_secret_bytes()
@@ -66,7 +65,7 @@ class User(object):
         with open(path, "wb") as f:
             f.write(dat)
 
-    def __init__(self, config_file: Path = Path("network.key")):
+    def __init__(self, config_file: Path = Path("network.topsecret")):
         if not config_file is None:
             with open(config_file, "rb") as f:
                 dat = f.read()

@@ -8,8 +8,6 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
-    UniqueConstraint,
-    PrimaryKeyConstraint,
     DateTime,
     create_engine,
 )
@@ -43,6 +41,8 @@ class DbUser(Base):
 
     verifying_key = Column(String, nullable=False)
 
+    last_challenge_dt = Column(String, nullable=True)
+
     time_created = Column(DateTime(timezone=True), server_default=func.now())
 
     time_updated = Column(DateTime(timezone=True), onupdate=func.now())
@@ -59,13 +59,17 @@ class DbUser(Base):
 
         return pkey, vkey
 
-    def check_challenge(self, b64_hash: str, b64_sign: str) -> bool:
+    def check_challenge(self, b64_hash: str, b64_sign: str, timeout: float) -> bool:
         pkey, vkey = self.decodeKeys()
 
         bdt = b64decode(b64_hash.encode(encoding="ascii"))
-        dt = datetime.fromisoformat(bdt.decode(encoding="ascii"))
+        sdt = bdt.decode(encoding="ascii")
+        if not self.last_challenge_dt is None and sdt == self.last_challenge_dt:
+            return False
+
+        dt = datetime.fromisoformat(sdt)
         t_diff = datetime.now() - dt
-        if t_diff > timedelta(seconds=5):
+        if t_diff > timedelta(seconds=timeout):
             return False
 
         hash = Hash()
@@ -74,7 +78,11 @@ class DbUser(Base):
         sign_bytes = b64decode(b64_sign.encode(encoding="ascii"))
         signature = Signature.from_bytes(sign_bytes)
 
-        return signature.verify_digest(vkey, hash)
+        if signature.verify_digest(vkey, hash):
+            self.last_challenge_dt = sdt
+            return True
+        else:
+            return False
 
 
 class PersonData(Base):

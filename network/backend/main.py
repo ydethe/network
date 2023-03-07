@@ -32,7 +32,7 @@ def run_server(
         f"""Running app with arguments (root_path='{os.environ.get("ROOT_PATH", "")}', workers={nb_workers}, reload={reload})"""
     )
     uvicorn.run(
-        "network.main:app",
+        "network.backend.main:app",
         host="127.0.0.1",
         port=port,
         log_level="info",

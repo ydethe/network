@@ -15,6 +15,7 @@ dependencies = [
     "typer~=0.7",
     "psycopg2-binary~=2.9",
     "httpx~=0.23",
+    "rich~=13.3",
 ]
 requires-python = ">=3.8,<3.12"
 

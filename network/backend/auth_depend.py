@@ -4,7 +4,6 @@ from starlette.responses import JSONResponse
 from starlette.requests import Request
 
 from .models import DbUser, con
-from .User import User
 
 
 class ChallengeMiddleware(BaseHTTPMiddleware):
@@ -32,6 +31,10 @@ class ChallengeMiddleware(BaseHTTPMiddleware):
         return response
 
     async def dispatch(self, request: Request, call_next):
+        if not request.url.path.startswith("/person/"):
+            response = await call_next(request)
+            return response
+
         response = self.analyse_header(request.headers)
         if "error" in response.keys():
             response = JSONResponse(response)

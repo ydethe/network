@@ -6,8 +6,8 @@ from starlette.middleware import Middleware
 from fastapi import FastAPI
 import typer
 
-from .authentication_middleware import ChallengeMiddleware
-from .routers import person_data
+from .auth_depend import ChallengeMiddleware
+from . import person_router, user_router
 
 
 tapp = typer.Typer()
@@ -17,10 +17,11 @@ app = FastAPI(
     title="Network API",
     description="API pour accéder à l'annuaire des contacts",
     version="0.1.0",
-    middleware=[Middleware(ChallengeMiddleware)],
+    # middleware=[Middleware(ChallengeMiddleware)],
 )
 
-app.include_router(person_data.router)
+app.include_router(person_router.router)
+app.include_router(user_router.router)
 
 
 @tapp.command()

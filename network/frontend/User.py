@@ -19,47 +19,45 @@ from umbral import (
 from umbral.capsule import Capsule
 from umbral.hashing import Hash
 
-from .models import DbUser, con
-
 
 class User(object):
     @classmethod
-    def createUser(cls: "User", config_file: Path = Path("network.key")):
+    def createUser(cls: "User") -> "User":
+        res = cls(config_file=None)
+
         # Key for encryption
-        private_key = SecretKey.random()
+        res.private_key = SecretKey.random()
+        res.public_key = res.private_key.public_key()
 
         # Key for authentication
-        signing_key = SecretKey.random()
-
-        db_pkey = b64encode(bytes(private_key.public_key())).decode(encoding="ascii")
-        db_vkey = b64encode(bytes(signing_key.public_key())).decode(encoding="ascii")
-
-        db_user = DbUser(public_key=db_pkey, verifying_key=db_vkey)
-        with con() as session:
-            session.add(db_user)
-            session.commit()
-            session.refresh(db_user)
-
-        cls.writeConfigurationFile(db_user.id, private_key, signing_key, config_file)
-        res = cls(config_file, db_user=db_user)
+        res.signing_key = SecretKey.random()
+        res.verifying_key = res.signing_key.public_key()
 
         return res
 
-    @classmethod
+    def to_json(self):
+        pkey = b64encode(bytes(self.public_key)).decode(encoding="ascii")
+        vkey = b64encode(bytes(self.verifying_key)).decode(encoding="ascii")
+
+        return {
+            "id": None,
+            "public_key": pkey,
+            "verifying_key": vkey,
+            "time_created": None,
+            "time_updated": None,
+        }
+
     def writeConfigurationFile(
-        cls,
-        user_id: int,
-        private_key: SecretKey,
-        signing_key: SecretKey,
+        self,
         path: Path = Path("network.key"),
     ):
-        pkey = private_key.to_secret_bytes()
-        skey = signing_key.to_secret_bytes()
+        pkey = self.private_key.to_secret_bytes()
+        skey = self.signing_key.to_secret_bytes()
 
         fmt = "<II" + len(pkey) * "B" + "I" + len(skey) * "B"
         dat = struct.pack(
             fmt,
-            user_id,
+            self.id,
             len(pkey),
             *pkey,
             len(skey),
@@ -68,41 +66,23 @@ class User(object):
         with open(path, "wb") as f:
             f.write(dat)
 
-    @classmethod
-    def loadKeyFromFile(cls, path: Path) -> SecretKey:
-        with open(path, "rb") as f:
-            key_bytes = f.read()
-        key = SecretKey.from_bytes(key_bytes)
-        return key
+    def __init__(self, config_file: Path = Path("network.key")):
+        if not config_file is None:
+            with open(config_file, "rb") as f:
+                dat = f.read()
 
-    def __init__(self, config_file: Path = Path("network.key"), db_user: DbUser = None):
-        with open(config_file, "rb") as f:
-            dat = f.read()
+            user_id, pkey_len = struct.unpack_from("<II", dat, offset=0)
+            pkey_bytes = dat[8 : 8 + pkey_len]
+            (skey_len,) = struct.unpack_from("<I", dat, offset=8 + pkey_len)
+            skey_bytes = dat[8 + pkey_len + 4 : 8 + pkey_len + 4 + skey_len]
 
-        user_id, pkey_len = struct.unpack_from("<II", dat, offset=0)
-        pkey_bytes = dat[8 : 8 + pkey_len]
-        (skey_len,) = struct.unpack_from("<I", dat, offset=8 + pkey_len)
-        skey_bytes = dat[8 + pkey_len + 4 : 8 + pkey_len + 4 + skey_len]
+            self.private_key = SecretKey.from_bytes(pkey_bytes)
+            self.public_key = self.private_key.public_key()
 
-        self.private_key = SecretKey.from_bytes(pkey_bytes)
-        self.public_key = self.private_key.public_key()
+            self.signing_key = SecretKey.from_bytes(skey_bytes)
+            self.verifying_key = self.signing_key.public_key()
 
-        self.signing_key = SecretKey.from_bytes(skey_bytes)
-        self.verifying_key = self.signing_key.public_key()
-
-        self.id = user_id
-
-        if db_user is None:
-            with con() as session:
-                db_user: DbUser = session.query(DbUser).filter(DbUser.id == user_id).first()
-
-        db_pkey, db_vkey = db_user.decodeKeys()
-
-        if bytes(db_pkey) != bytes(self.public_key):
-            raise AssertionError(f"Corrupted public key")
-
-        if bytes(db_vkey) != bytes(self.verifying_key):
-            raise AssertionError(f"Corrupted verifying key")
+            self.id = user_id
 
     def build_challenge(self) -> str:
         sdt = datetime.now().isoformat()

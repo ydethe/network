@@ -2,21 +2,21 @@
 
 .. include:: ../README.md
 
-# Testing
+[comment]: # (The class diagram is as follows:)
 
-## Run the tests
+[comment]: # (![classes](./classes.png "Class diagram"))
 
-To run tests, just run:
+# Tests and coverage
+
+## Running tests
+
+To run tests and code coverage, run:
 
     pdm test
 
-## Baseline images generation
+## Reports
 
-If needed (for example, a new test with its associated baseline image), we might have to regenerate the baseline images. In this case, run:
-
-    pdm baseline
-
-## Test reports
+Once the tests ran, the reports are generated. See the links below:
 
 [See test report](../tests/report.html)
 
@@ -24,14 +24,25 @@ If needed (for example, a new test with its associated baseline image), we might
 
 [See coverage](../coverage/index.html)
 
-# Class diagram
+# Building distribution
 
-![classes](./classes.png "Class diagram")
+The following command builds a wheel file in the dist folder:
+
+    pdm build
+
+The following command builds the doc in build/htmldoc/benjamin_mp:
+
+    pdm doc
 
 """
 import os
 import logging
 
-# création de l'objet logger qui va nous servir à écrire dans les logs
+from rich.logging import RichHandler
+
+
 logger = logging.getLogger(f"{__package__}_logger")
 logger.setLevel(os.environ.get("LOGLEVEL", "INFO").upper())
+
+stream_handler = RichHandler()
+logger.addHandler(stream_handler)

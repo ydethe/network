@@ -5,14 +5,14 @@ import requests
 from sqlalchemy import create_engine
 from fastapi.testclient import TestClient
 
-from network.User import User
-from network.Proxy import Proxy
-from network import models
-from network.main import app
+from network.frontend.User import User
+from network.frontend.Proxy import Proxy
+from network.backend import models
+from network.backend.main import app
 
 
 def prepare_test(ref_plaintext: str = "Président de la République Française"):
-    db_uri = os.environ.get("DATABASE_URI", "tests/test_data.db")
+    db_uri = os.environ.get("DATABASE_URI", "sqlite:///tests/test_data.db")
 
     default_db_uri = Path("tests/test_data.db")
     if default_db_uri.exists():
@@ -22,24 +22,29 @@ def prepare_test(ref_plaintext: str = "Président de la République Française")
     target_metadata = models.Base.metadata
     target_metadata.create_all(engine)
 
-    alice = User.createUser(config_file=Path("alice.key"))
-    bob = User.createUser(config_file=Path("bob.key"))
+    client = TestClient(app)
+
+    alice: User = User.createUser()
+    r = client.post("/users/", json=alice.to_json())
+    alice.id = r.json()["id"]
+    alice.writeConfigurationFile(Path("alice.key"))
+
+    bob: User = User.createUser()
+    r = client.post("/users/", json=bob.to_json())
+    bob.id = r.json()["id"]
+    bob.writeConfigurationFile(Path("bob.key"))
 
     capsule, ciphertext = alice.encrypt(ref_plaintext.encode())
 
-    data = models.PersonData(
-        user_id=alice.id,
-        person_id=1,
-        data_type="name",
-        encrypted_data=alice.encrypted_to_db_bytes(capsule, ciphertext),
-    )
+    data = {
+        "encrypted_data": alice.encrypted_to_db_bytes(capsule, ciphertext),
+    }
 
-    with models.con() as session:
-        session.add(data)
-        session.commit()
-        session.refresh(data)
+    challenge_str = alice.build_challenge()
+    r = client.post("/person/", json=data, headers={"Challenge": challenge_str})
+    data = r.json()
 
-    return data.id
+    assert data["user_id"] == alice.id
 
 
 def test_legacy():
@@ -73,7 +78,7 @@ def test_person_data(ref_plaintext: str = "Président de la République Françai
         print(r.text)
         return
 
-    data = r.json()[0]
+    data = r.json()
 
     capsule, ciphertext = alice.db_bytes_to_encrypted(data["encrypted_data"])
 

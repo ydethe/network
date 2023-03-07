@@ -3,10 +3,10 @@ from starlette.responses import JSONResponse
 from fastapi import APIRouter, Depends, HTTPException, Path, Request
 from sqlalchemy.orm import Session
 
-from .. import schemas
-from .. import crud
-from ..models import engine
-from ..authentication_middleware import ChallengeMiddleware
+from . import schemas
+from . import crud
+from .models import engine
+from .auth_depend import ChallengeMiddleware
 
 
 def get_db():
@@ -22,7 +22,7 @@ router = APIRouter(prefix="/person", tags=["person"])
 
 @router.get(
     "/{person_id}",
-    response_model=List[schemas.PersonDataModel],
+    response_model=schemas.PersonDataModel,
     description="Retrive one person data for user",
 )
 def read_person_data(
@@ -66,14 +66,20 @@ def list_persons(
 
 
 @router.post(
-    "/{person_id}",
+    "/",
     response_model=schemas.PersonDataModel,
     description="Creates one person data for user",
 )
 def create_person_data(
     request: Request,
-    person_id: int = Path(description="ID of the person to retrieve"),
     item: schemas.PersonDataModel = None,
     db: Session = Depends(get_db),
 ):
-    return crud.post_person_data(db=db, item=item, user_id=request.user_id, person_id=person_id)
+    response = ChallengeMiddleware.analyse_header(request.headers)
+    if "error" in response.keys():
+        response = JSONResponse(response)
+        return response
+
+    item.user_id = response["user_id"]
+
+    return crud.create_person_data(db=db, item=item)

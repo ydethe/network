@@ -1,6 +1,7 @@
 from base64 import b64decode
 from datetime import datetime, timedelta
 import os
+import logging
 
 from sqlalchemy import (
     Column,
@@ -8,6 +9,7 @@ from sqlalchemy import (
     Integer,
     String,
     UniqueConstraint,
+    PrimaryKeyConstraint,
     DateTime,
     create_engine,
 )
@@ -19,9 +21,13 @@ from umbral import PublicKey, Signature
 from umbral.hashing import Hash
 
 
+logger = logging.getLogger(f"{__package__}_logger")
+
 Base = declarative_base()
 
 db_uri = os.environ.get("DATABASE_URI", "sqlite:///tests/test_data.db")
+logger.info(f"Using database {db_uri}")
+
 engine = create_engine(db_uri, echo=False, future=True)
 con = sessionmaker(engine)
 
@@ -76,7 +82,7 @@ class PersonData(Base):
     __tablename__ = "person_data"
 
     #: Unique identifier of the session
-    id = Column(Integer, primary_key=True, nullable=False)
+    id = Column(Integer, nullable=False, primary_key=True)
 
     #: Session id the observation belongs to
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -84,15 +90,4 @@ class PersonData(Base):
     #: Session instance the observation belongs to
     user = relationship("DbUser", back_populates="person_data")
 
-    person_id = Column(Integer, nullable=False)
-
-    data_type = Column(String(32), nullable=False)
-
     encrypted_data = Column(String, nullable=False)
-
-    UniqueConstraint(
-        user_id,
-        person_id,
-        data_type,
-        name="uc_person_data",
-    )

@@ -1,12 +1,10 @@
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, Path, Request
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
 from .. import schemas
 from . import crud
 from .models import engine, con, DbUser, PersonData
 from .auth_depend import challenge_auth
-from .Proxy import Proxy
 
 
 def get_db():

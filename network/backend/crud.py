@@ -6,7 +6,7 @@ from network.backend.Proxy import Proxy
 
 from . import models
 from .. import schemas
-from ..transcoding import db_bytes_to_encrypted, db_bytes_to_kfrag
+from ..transcoding import cfrag_to_db_bytes, db_bytes_to_encrypted, db_bytes_to_kfrag
 
 
 def list_persons(db: Session, user_id: int) -> List[int]:
@@ -58,7 +58,7 @@ def post_shared_data(
     kfrag = db_bytes_to_kfrag(db_kfrag)
     u = Proxy()
     cfrag = u.reencrypt(capsule, kfrag)
-    db_cfrag = Proxy.cfrag_to_db_bytes(cfrag)
+    db_cfrag = cfrag_to_db_bytes(cfrag)
     db_item = models.PersonData(
         user_id=recipient.id,
         encrypted_data=encrypted_data,

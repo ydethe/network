@@ -1,11 +1,10 @@
 from pathlib import Path
 from datetime import datetime
-from typing import List, Tuple
+from typing import List
 import struct
-from base64 import b64encode, b64decode
+from base64 import b64encode
 
 from umbral import (
-    VerifiedCapsuleFrag,
     VerifiedKeyFrag,
     PublicKey,
     generate_kfrags,
@@ -17,7 +16,7 @@ from umbral import (
 )
 from umbral.hashing import Hash
 
-from ..transcoding import encrypted_to_db_bytes
+from ..transcoding import datetime_to_challenge, encodeKey, encrypted_to_db_bytes, kfrag_to_db_bytes
 from .. import schemas
 
 
@@ -37,8 +36,8 @@ class User(object):
         return res
 
     def to_json(self):
-        pkey = b64encode(bytes(self.public_key)).decode(encoding="ascii")
-        vkey = b64encode(bytes(self.verifying_key)).decode(encoding="ascii")
+        pkey = encodeKey(self.public_key)
+        vkey = encodeKey(self.verifying_key)
 
         return {
             "id": None,
@@ -86,14 +85,15 @@ class User(object):
             self.id = user_id
 
     def build_challenge(self) -> str:
-        sdt = datetime.now().isoformat()
+        dt = datetime.now()
+        sdt, b64_hash = datetime_to_challenge(dt)
+
         hash = Hash()
         hash.update(sdt.encode(encoding="ascii"))
 
         signer = Signer(self.signing_key)
         signature = signer.sign_digest(hash)
 
-        b64_hash = b64encode(sdt.encode(encoding="ascii")).decode(encoding="ascii")
         b64_sign = b64encode(bytes(signature)).decode(encoding="ascii")
 
         return f"{self.id}:{b64_hash}:{b64_sign}"
@@ -201,15 +201,16 @@ class User(object):
         )
         return kfrags
 
-    @staticmethod
-    def kfrag_to_db_bytes(kfrag: VerifiedKeyFrag) -> dict:
-        kfrag_bytes = bytes(kfrag)
-        kfrag_sze = len(kfrag_bytes)
+    def generate_kfrags_for_db(self, rx_public_key: PublicKey) -> dict:
+        """Generate "M of N" re-encryption key fragments (or "KFrags") for the receiver
 
-        dat = struct.pack(
-            "<I" + kfrag_sze * "B",
-            kfrag_sze,
-            *kfrag_bytes,
-        )
-        b64data = b64encode(dat).decode(encoding="ascii")
-        return {"kfrag": b64data}
+        Args:
+            rx_public_key: The public key of the receiver
+
+        Returns:
+            A list of kfrags
+
+        """
+        kfrags = self.generate_kfrags(rx_public_key, threshold=1, shares=1)
+        kfrag_json = kfrag_to_db_bytes(kfrags[0])
+        return kfrag_json

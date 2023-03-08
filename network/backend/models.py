@@ -1,9 +1,7 @@
-from base64 import b64decode, b64encode
+from base64 import b64decode
 from datetime import datetime, timedelta
 import os
 import logging
-from typing import Tuple
-import struct
 
 from sqlalchemy import (
     Column,
@@ -17,10 +15,10 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import sessionmaker
-from umbral import PublicKey, Signature, Capsule, VerifiedKeyFrag
+from umbral import Signature
 from umbral.hashing import Hash
 
-from ..transcoding import decodeKey
+from ..transcoding import challenge_to_datetime, decodeKey
 
 
 logger = logging.getLogger(f"{__package__}_logger")
@@ -55,21 +53,18 @@ class DbUser(Base):
     person_data = relationship("PersonData", back_populates="user")
 
     def check_challenge(self, b64_hash: str, b64_sign: str, timeout: float) -> bool:
-        pkey = decodeKey(self.public_key)
         vkey = decodeKey(self.verifying_key)
 
-        bdt = b64decode(b64_hash.encode(encoding="ascii"))
-        sdt = bdt.decode(encoding="ascii")
+        sdt, dt = challenge_to_datetime(b64_hash)
         if not self.last_challenge_dt is None and sdt == self.last_challenge_dt:
             return False
 
-        dt = datetime.fromisoformat(sdt)
         t_diff = datetime.now() - dt
         if t_diff > timedelta(seconds=timeout):
             return False
 
         hash = Hash()
-        hash.update(bdt)
+        hash.update(sdt.encode(encoding="ascii"))
 
         sign_bytes = b64decode(b64_sign.encode(encoding="ascii"))
         signature = Signature.from_bytes(sign_bytes)

@@ -6,10 +6,8 @@ from sqlalchemy import create_engine
 from fastapi.testclient import TestClient
 
 from network.frontend.User import User
-from network.backend.Proxy import Proxy
 from network.backend import models
 from network.backend.main import app
-from network.transcoding import db_bytes_to_encrypted
 from network.schemas import PersonDataModel
 
 
@@ -91,8 +89,7 @@ def test_pre(ref_plaintext: str = "Président de la République Française"):
     # Alice prepares her message to send
     # ===================================
     # Only Alice can generate kfrags
-    kfrags = alice.generate_kfrags(bob.public_key, threshold=1, shares=1)
-    kfrag_json = alice.kfrag_to_db_bytes(kfrags[0])
+    kfrag_json = alice.generate_kfrags_for_db(bob.public_key)
 
     challenge_str = alice.build_challenge()
 

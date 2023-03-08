@@ -185,7 +185,7 @@ def test_errors():
     challenge_str = ":".join(elem)
     r = client.get("/person/", headers={"Challenge": challenge_str})
     assert r.status_code == 401
-    assert "Invalid challenge" in r.json()["detail"]
+    assert "Invalid challenge signature" in r.json()["detail"]
 
 
 if __name__ == "__main__":

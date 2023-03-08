@@ -47,8 +47,6 @@ def list_persons(
     user_id: int = Depends(challenge_auth),
 ):
     db_data = crud.list_persons(db, user_id)
-    if db_data is None:
-        raise HTTPException(status_code=404, detail="Person data not found")
     return db_data
 
 

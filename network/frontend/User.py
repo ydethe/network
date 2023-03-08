@@ -21,53 +21,26 @@ from .. import schemas
 
 
 class User(object):
-    @classmethod
-    def createUser(cls) -> "User":
-        res = cls(config_file=None)
+    """Creates a user, without writing it in the database. Only the keys are stored.
 
-        # Key for encryption
-        res.private_key = SecretKey.random()
-        res.public_key = res.private_key.public_key()
+    Args:
+        config_file: File to read to instanciate the user
 
-        # Key for authentication
-        res.signing_key = SecretKey.random()
-        res.verifying_key = res.signing_key.public_key()
+    """
 
-        return res
+    def __init__(self, config_file: Path = None):
+        if config_file is None:
+            # Key for encryption
+            self.private_key = SecretKey.random()
+            self.public_key = self.private_key.public_key()
 
-    def to_json(self):
-        pkey = encodeKey(self.public_key)
-        vkey = encodeKey(self.verifying_key)
+            # Key for authentication
+            self.signing_key = SecretKey.random()
+            self.verifying_key = self.signing_key.public_key()
 
-        return {
-            "id": None,
-            "public_key": pkey,
-            "verifying_key": vkey,
-            "time_created": None,
-            "time_updated": None,
-        }
+            self.id = None
 
-    def writeConfigurationFile(
-        self,
-        path: Path = Path("network.topsecret"),
-    ):
-        pkey = self.private_key.to_secret_bytes()
-        skey = self.signing_key.to_secret_bytes()
-
-        fmt = "<II" + len(pkey) * "B" + "I" + len(skey) * "B"
-        dat = struct.pack(
-            fmt,
-            self.id,
-            len(pkey),
-            *pkey,
-            len(skey),
-            *skey,
-        )
-        with open(path, "wb") as f:
-            f.write(dat)
-
-    def __init__(self, config_file: Path = Path("network.topsecret")):
-        if not config_file is None:
+        else:
             with open(config_file, "rb") as f:
                 dat = f.read()
 
@@ -84,7 +57,45 @@ class User(object):
 
             self.id = user_id
 
+    def to_json(self):
+        pkey = encodeKey(self.public_key)
+        vkey = encodeKey(self.verifying_key)
+
+        return {
+            "id": None,
+            "public_key": pkey,
+            "verifying_key": vkey,
+            "time_created": None,
+            "time_updated": None,
+        }
+
+    def writeConfigurationFile(self, path: Path):
+        if self.id is None:
+            raise AssertionError(
+                "User not registered in database. Cannot write the .topsecret file"
+            )
+
+        pkey = self.private_key.to_secret_bytes()
+        skey = self.signing_key.to_secret_bytes()
+
+        fmt = "<II" + len(pkey) * "B" + "I" + len(skey) * "B"
+        dat = struct.pack(
+            fmt,
+            self.id,
+            len(pkey),
+            *pkey,
+            len(skey),
+            *skey,
+        )
+        with open(path, "wb") as f:
+            f.write(dat)
+
     def build_challenge(self) -> str:
+        if self.id is None:
+            raise AssertionError(
+                "User not registered in database. Cannot write the .topsecret file"
+            )
+
         dt = datetime.now()
         sdt, b64_hash = datetime_to_challenge(dt)
 
@@ -109,6 +120,11 @@ class User(object):
             The ciphertext
 
         """
+        if self.id is None:
+            raise AssertionError(
+                "User not registered in database. Cannot write the .topsecret file"
+            )
+
         public_key = self.private_key.public_key()
         capsule, ciphertext = encrypt(public_key, plaintext)
 

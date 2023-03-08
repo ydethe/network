@@ -5,6 +5,7 @@ import time
 from sqlalchemy import create_engine
 from fastapi.testclient import TestClient
 
+from network.backend.auth_depend import challenge_auth
 from network.frontend.User import User
 from network.backend import models
 from network.backend.main import app
@@ -24,13 +25,15 @@ def test_prepare(ref_plaintext: str = "Président de la République Française")
 
     client = TestClient(app)
 
-    alice: User = User.createUser()
+    alice = User()
     r = client.post("/users/", json=alice.to_json())
+    assert r.status_code == 200
     alice.id = r.json()["id"]
     alice.writeConfigurationFile(Path("alice.topsecret"))
 
-    bob: User = User.createUser()
+    bob = User()
     r = client.post("/users/", json=bob.to_json())
+    assert r.status_code == 200
     bob.id = r.json()["id"]
     bob.writeConfigurationFile(Path("bob.topsecret"))
 
@@ -38,6 +41,7 @@ def test_prepare(ref_plaintext: str = "Président de la République Française")
 
     challenge_str = alice.build_challenge()
     r = client.post("/person/", json=data, headers={"Challenge": challenge_str})
+    assert r.status_code == 200
     data = r.json()
 
     assert data["user_id"] == alice.id
@@ -62,17 +66,18 @@ def test_person_data(ref_plaintext: str = "Président de la République Françai
 
     challenge_str = alice.build_challenge()
     r = client.get("/person/", headers={"Challenge": challenge_str})
-    if r.status_code != 200:
-        print(r.text)
-        return
-
+    assert r.status_code == 200
     data = r.json()
     person_id = data[0]
 
+    # Trying to reuse a challenge (forbidden !!!)
     r = client.get(f"/person/{person_id}", headers={"Challenge": challenge_str})
-    if r.status_code != 200:
-        print(r.text)
-        return
+    assert r.status_code == 401
+    assert "Trying to reuse a challenge" in r.json()["detail"]
+
+    challenge_str = alice.build_challenge()
+    r = client.get(f"/person/{person_id}", headers={"Challenge": challenge_str})
+    assert r.status_code == 200
 
     plaintext = alice.decrypt_from_db(r.json())
 
@@ -91,14 +96,15 @@ def test_pre(ref_plaintext: str = "Président de la République Française"):
     # Only Alice can generate kfrags
     kfrag_json = alice.generate_kfrags_for_db(bob.public_key)
 
-    challenge_str = alice.build_challenge()
-
     # We send data for the first person in alice's list
+    challenge_str = alice.build_challenge()
     r = client.get("/person/", headers={"Challenge": challenge_str})
+    assert r.status_code == 200
     persons_list = r.json()
     person_id = persons_list[0]
 
     # Actual sending
+    challenge_str = alice.build_challenge()
     r = client.post(
         f"/pre/{person_id}/{bob.id}", headers={"Challenge": challenge_str}, json=kfrag_json
     )
@@ -116,6 +122,7 @@ def test_pre(ref_plaintext: str = "Président de la République Française"):
     # assert bob_cleartext == original_text
     challenge_str = bob.build_challenge()
     r = client.get(f"/person/{bob_person_id}", headers={"Challenge": challenge_str})
+    assert r.status_code == 200
 
     data = r.json()
     item = PersonDataModel(**data)
@@ -142,11 +149,43 @@ def test_errors():
         in r.json()["detail"]
     )
 
+    # ==============================================================================
+
     challenge_str = alice.build_challenge()
-    time.sleep(6)
+    time.sleep(challenge_auth.challenge_timeout + 1)
     r = client.get("/person/", headers={"Challenge": challenge_str})
     assert r.status_code == 401
-    assert "Failed solving the challenge" in r.json()["detail"]
+    assert "Challenge expired" in r.json()["detail"]
+
+    # ==============================================================================
+
+    challenge_str = alice.build_challenge()
+    # Creation of an invalid challenge (timestamp)
+    elem = challenge_str.split(":")
+    if elem[1][0] == "a":
+        b64_hash = "b" + elem[1][1:]
+    else:
+        b64_hash = "a" + elem[1][1:]
+    elem[1] = b64_hash
+    challenge_str = ":".join(elem)
+    r = client.get("/person/", headers={"Challenge": challenge_str})
+    assert r.status_code == 401
+    assert "Impossible to get timestamp from challenge" in r.json()["detail"]
+
+    # ==============================================================================
+
+    challenge_str = alice.build_challenge()
+    # Creation of an invalid challenge (signature)
+    elem = challenge_str.split(":")
+    if elem[2][0] == "a":
+        b64_sign = "b" + elem[2][1:]
+    else:
+        b64_sign = "a" + elem[2][1:]
+    elem[2] = b64_sign
+    challenge_str = ":".join(elem)
+    r = client.get("/person/", headers={"Challenge": challenge_str})
+    assert r.status_code == 401
+    assert "Invalid challenge" in r.json()["detail"]
 
 
 if __name__ == "__main__":
@@ -156,4 +195,4 @@ if __name__ == "__main__":
     # test_legacy()
     # test_person_data(ref_plaintext)
     # test_pre()
-    # test_errors()
+    test_errors()

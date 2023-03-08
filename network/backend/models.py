@@ -12,9 +12,7 @@ from sqlalchemy import (
     create_engine,
 )
 from sqlalchemy.sql import func
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.orm import relationship
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, Session, relationship, sessionmaker
 from umbral import Signature
 from umbral.hashing import Hash
 
@@ -43,7 +41,7 @@ class DbUser(Base):
 
     verifying_key = Column(String, nullable=False)
 
-    last_challenge_dt = Column(String, nullable=True)
+    time_last_challenge = Column(DateTime(timezone=True), nullable=True)
 
     time_created = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -52,28 +50,53 @@ class DbUser(Base):
     #: List of the related records in person_data table
     person_data = relationship("PersonData", back_populates="user")
 
-    def check_challenge(self, b64_hash: str, b64_sign: str, timeout: float) -> bool:
+    def check_challenge(
+        self, session: Session, b64_hash: str, b64_sign: str, timeout: float
+    ) -> dict:
         vkey = decodeKey(self.verifying_key)
 
-        sdt, dt = challenge_to_datetime(b64_hash)
-        if not self.last_challenge_dt is None and sdt == self.last_challenge_dt:
-            return False
+        challenge_data = challenge_to_datetime(b64_hash)
+        if challenge_data["status"] != 200:
+            return challenge_data
 
-        t_diff = datetime.now() - dt
+        if (
+            not self.time_last_challenge is None
+            and challenge_data["datetime"] == self.time_last_challenge
+        ):
+            response = {
+                "status": 401,
+                "message": f"Trying to reuse a challenge",
+            }
+            return response
+
+        t_diff = datetime.now() - challenge_data["datetime"]
         if t_diff > timedelta(seconds=timeout):
-            return False
+            response = {
+                "status": 401,
+                "message": f"Challenge expired ({t_diff.total_seconds()} s elapsed)",
+            }
+            return response
 
         hash = Hash()
-        hash.update(sdt.encode(encoding="ascii"))
+        hash.update(challenge_data["iso"].encode(encoding="ascii"))
 
         sign_bytes = b64decode(b64_sign.encode(encoding="ascii"))
         signature = Signature.from_bytes(sign_bytes)
 
         if signature.verify_digest(vkey, hash):
-            self.last_challenge_dt = sdt
-            return True
+            self.time_last_challenge = challenge_data["datetime"]
+            session.commit()
+            response = {
+                "status": 200,
+                "message": "OK",
+            }
+            return response
         else:
-            return False
+            response = {
+                "status": 401,
+                "message": "Invalid challenge signature",
+            }
+            return response
 
 
 class PersonData(Base):

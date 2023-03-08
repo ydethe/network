@@ -15,9 +15,13 @@ class UmbralMessage:
     capsule: Capsule
     #: The ciphertext returnd by the encrypt method
     ciphertext: bytes
+    #: ID of the data in the database
     id: Optional[int] = None
+    #: ID of the user that owns the data
     user_id: Optional[int] = None
+    #: Capsule frag used to decrypt the data. Used only if the data has been shared by another user
     cfrag: Optional[VerifiedCapsuleFrag] = None
+    #: Public key of the user who shared the data
     sender_pkey: Optional[PublicKey] = None
 
 

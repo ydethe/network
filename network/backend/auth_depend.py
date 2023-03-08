@@ -14,12 +14,12 @@ class ChallengeAuthentication(object):
             key = "Challenge"
         challenge = headers.get(key, None)
         if challenge is None:
-            response = {"error": 401, "message": "No challenge provided with the request"}
+            response = {"status": 401, "message": "No challenge provided with the request"}
             return response
 
         if challenge.count(":") != 2:
             response = {
-                "error": 401,
+                "status": 401,
                 "message": f"Invalid format for challenge. Shall be <user_id>:<b64_hash>:<b64_sign>. Got {challenge}",
             }
             return response
@@ -32,8 +32,8 @@ class ChallengeAuthentication(object):
 
     async def __call__(self, request: Request) -> int:
         response = self.analyse_header(request.headers)
-        if "error" in response.keys():
-            raise HTTPException(status_code=response["error"], detail=response["message"])
+        if "status" in response.keys():
+            raise HTTPException(status_code=response["status"], detail=response["message"])
 
         user_id = response["user_id"]
         b64_hash = response["b64_hash"]
@@ -42,10 +42,16 @@ class ChallengeAuthentication(object):
         with con() as session:
             db_user = session.query(DbUser).filter(DbUser.id == user_id).first()
 
-        if db_user.check_challenge(b64_hash, b64_sign, timeout=self.challenge_timeout):
-            return user_id
-        else:
-            raise HTTPException(status_code=401, detail="Failed solving the challenge")
+            challenge_response = db_user.check_challenge(
+                session, b64_hash, b64_sign, timeout=self.challenge_timeout
+            )
+
+            if challenge_response["status"] != 200:
+                raise HTTPException(
+                    status_code=challenge_response["status"], detail=challenge_response["message"]
+                )
+
+        return user_id
 
 
 challenge_auth = ChallengeAuthentication(challenge_timeout=5)

@@ -7,21 +7,56 @@ from umbral import Capsule, PublicKey, VerifiedKeyFrag, VerifiedCapsuleFrag
 
 
 def datetime_to_challenge(dt: datetime) -> Tuple[str, str]:
+    """Process a datetime to get data for the challenge
+
+    Args:
+        dt: Datetime to convert
+
+    Returns:
+        The datetime as a string
+        The datetime coded in base64
+
+    """
     sdt = dt.isoformat()
     b64_hash = b64encode(sdt.encode(encoding="ascii")).decode(encoding="ascii")
     return sdt, b64_hash
 
 
-def challenge_to_datetime(b64_hash: str) -> Tuple[str, datetime]:
-    bdt = b64decode(b64_hash.encode(encoding="ascii"))
-    sdt = bdt.decode(encoding="ascii")
+def challenge_to_datetime(b64_hash: str) -> dict:
+    """Process the base64 data of a challenge to get the original datetime object and its string represntation
 
-    dt = datetime.fromisoformat(sdt)
+    Args:
+        b64_hash: base64 data of the challenge
 
-    return sdt, dt
+    Returns:
+        The datetime as a string
+        The datetime object
+
+    """
+    try:
+        bdt = b64decode(b64_hash.encode(encoding="ascii"))
+        sdt = bdt.decode(encoding="ascii")
+
+        dt = datetime.fromisoformat(sdt)
+
+        res = {"status": 200, "iso": sdt, "datetime": dt}
+
+    except BaseException as e:
+        res = {"status": 401, "message": "Impossible to get timestamp from challenge"}
+
+    return res
 
 
 def db_bytes_to_kfrag(db_data: str) -> VerifiedKeyFrag:
+    """Build a `VerifiedKeyFrag` from the database string
+
+    Args:
+        db_data: kfrag as stored in the database
+
+    Returns:
+        The verified kfrag
+
+    """
     dat = b64decode(db_data.encode(encoding="ascii"))
 
     (kfrag_sze,) = struct.unpack_from("<I", dat, offset=0)
@@ -33,6 +68,15 @@ def db_bytes_to_kfrag(db_data: str) -> VerifiedKeyFrag:
 
 
 def db_bytes_to_cfrag(db_data: str) -> VerifiedCapsuleFrag:
+    """Build a `VerifiedCapsuleFrag` from the database string
+
+    Args:
+        db_data: cfrag as stored in the database
+
+    Returns:
+        The verified cfrag
+
+    """
     dat = b64decode(db_data.encode(encoding="ascii"))
 
     (cfrag_sze,) = struct.unpack_from("<I", dat, offset=0)
@@ -44,6 +88,15 @@ def db_bytes_to_cfrag(db_data: str) -> VerifiedCapsuleFrag:
 
 
 def cfrag_to_db_bytes(cfrag: VerifiedCapsuleFrag) -> dict:
+    """Codes a `VerifiedCapsuleFrag` for write in the database
+
+    Args:
+        cfrag: The verified cfrag to store in the database
+
+    Returns:
+        A dictionary with key 'cfrag' and the db value as a string
+
+    """
     cfrag_bytes = bytes(cfrag)
     cfrag_sze = len(cfrag_bytes)
 
@@ -58,6 +111,15 @@ def cfrag_to_db_bytes(cfrag: VerifiedCapsuleFrag) -> dict:
 
 
 def kfrag_to_db_bytes(kfrag: VerifiedKeyFrag) -> dict:
+    """Codes a `VerifiedKeyFrag` for write in the database
+
+    Args:
+        kfrag: The verified kfrag to store in the database
+
+    Returns:
+        A dictionary with key 'kfrag' and the db value as a string
+
+    """
     kfrag_bytes = bytes(kfrag)
     kfrag_sze = len(kfrag_bytes)
 
@@ -71,6 +133,16 @@ def kfrag_to_db_bytes(kfrag: VerifiedKeyFrag) -> dict:
 
 
 def encrypted_to_db_bytes(capsule: Capsule, ciphertext: bytes) -> str:
+    """Codes an encrypted for write in the database
+
+    Args:
+        capsule: The capsule of the encrypted message
+        ciphertext: The encrypted messages bytes
+
+    Returns:
+        The database representation of the message
+
+    """
     caps_sze = capsule.serialized_size()
     ciph_sze = len(ciphertext)
 
@@ -86,6 +158,16 @@ def encrypted_to_db_bytes(capsule: Capsule, ciphertext: bytes) -> str:
 
 
 def db_bytes_to_encrypted(db_data: str) -> Tuple[Capsule, bytes]:
+    """Decodes an encrypted message as stored in the database
+
+    Args:
+        db_data: The database representation of the message
+
+    Returns:
+        The capsule of the encrypted message
+        The encrypted messages bytes
+
+    """
     b64data = db_data.encode(encoding="ascii")
     dat = b64decode(b64data)
 
@@ -100,12 +182,30 @@ def db_bytes_to_encrypted(db_data: str) -> Tuple[Capsule, bytes]:
 
 
 def encodeKey(pkey: PublicKey) -> str:
+    """Encodes a `PublicKey` as a database string
+
+    Args:
+        pkey: The database representation of the message
+
+    Returns:
+        The database representation of the key
+
+    """
     pkey_bytes = b64encode(bytes(pkey)).decode(encoding="ascii")
 
     return pkey_bytes
 
 
 def decodeKey(db_key: str) -> PublicKey:
+    """Decodes a `PublicKey` from its database string
+
+    Args:
+        db_key: The database representation of the key
+
+    Returns:
+        The database representation of the message
+
+    """
     key_bytes = b64decode(db_key.encode(encoding="ascii"))
     key = PublicKey.from_bytes(key_bytes)
 

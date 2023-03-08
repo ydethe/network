@@ -9,6 +9,8 @@ from network.frontend.User import User
 from network.backend.Proxy import Proxy
 from network.backend import models
 from network.backend.main import app
+from network.transcoding import db_bytes_to_encrypted
+from network.schemas import PersonDataModel
 
 
 def test_prepare(ref_plaintext: str = "Président de la République Française"):
@@ -34,11 +36,7 @@ def test_prepare(ref_plaintext: str = "Président de la République Française")
     bob.id = r.json()["id"]
     bob.writeConfigurationFile(Path("bob.topsecret"))
 
-    capsule, ciphertext = alice.encrypt(ref_plaintext.encode())
-
-    data = {
-        "encrypted_data": alice.encrypted_to_db_bytes(capsule, ciphertext),
-    }
+    data = alice.encrypt_for_db(ref_plaintext.encode())
 
     challenge_str = alice.build_challenge()
     r = client.post("/person/", json=data, headers={"Challenge": challenge_str})
@@ -54,8 +52,8 @@ def test_legacy():
     # Alice prepares her message to send
     # ===================================
     original_text = b"Je suis un poney"
-    capsule, ciphertext = alice.encrypt(original_text)
-    alice_cleartext = alice.decrypt(capsule, ciphertext)
+    u_item = alice.encrypt(original_text)
+    alice_cleartext = alice.decrypt(u_item)
     assert alice_cleartext == original_text
 
 
@@ -78,44 +76,57 @@ def test_person_data(ref_plaintext: str = "Président de la République Françai
         print(r.text)
         return
 
-    data = r.json()
-
-    capsule, ciphertext = alice.db_bytes_to_encrypted(data["encrypted_data"])
-
-    plaintext = alice.decrypt(capsule, ciphertext)
+    plaintext = alice.decrypt_from_db(r.json())
 
     assert ref_plaintext == plaintext.decode()
 
 
-def test_pre():
+def test_pre(ref_plaintext: str = "Président de la République Française"):
+    client = TestClient(app)
+
     alice = User(config_file=Path("alice.topsecret"))
     bob = User(config_file=Path("bob.topsecret"))
-
-    ursulas = [Proxy() for _ in range(10)]
 
     # ===================================
     # Alice prepares her message to send
     # ===================================
-    original_text = b"Je suis un poney"
-    capsule, ciphertext = alice.encrypt(original_text)
-
     # Only Alice can generate kfrags
-    kfrags = alice.generate_kfrags(bob.public_key, threshold=10, shares=10)
+    kfrags = alice.generate_kfrags(bob.public_key, threshold=1, shares=1)
+    kfrag_json = alice.kfrag_to_db_bytes(kfrags[0])
 
-    # ===================================
-    # The proxies perform reencryption
-    # ===================================
-    # Several Ursulas perform re-encryption, and Bob collects the resulting `cfrags`.
-    cfrags = list()  # Bob's cfrag collection
-    for u, kfrag in zip(ursulas, kfrags):
-        cfrag = u.reencrypt(capsule, kfrag)
-        cfrags.append(cfrag)  # Bob collects a cfrag
+    challenge_str = alice.build_challenge()
+
+    # We send data for the first person in alice's list
+    r = client.get("/person/", headers={"Challenge": challenge_str})
+    persons_list = r.json()
+    person_id = persons_list[0]
+
+    # Actual sending
+    r = client.post(
+        f"/pre/{person_id}/{bob.id}", headers={"Challenge": challenge_str}, json=kfrag_json
+    )
+    assert r.status_code == 200
+    item = r.json()
+    assert item["cfrag"] != ""
+    assert item["sender_pkey"] != ""
+    assert item["encrypted_data"] != ""
+    bob_person_id = item["id"]
 
     # =====================================
     # Bob decrypts the reencrypted message
     # =====================================
-    bob_cleartext = bob.decrypt_reencrypted(alice.public_key, cfrags, capsule, ciphertext)
-    assert bob_cleartext == original_text
+    # bob_cleartext = bob.decrypt_reencrypted(alice.public_key, cfrags, capsule, ciphertext)
+    # assert bob_cleartext == original_text
+    challenge_str = bob.build_challenge()
+    r = client.get(f"/person/{bob_person_id}", headers={"Challenge": challenge_str})
+
+    data = r.json()
+    item = PersonDataModel(**data)
+    u_item = item.toUmbral()
+
+    plaintext = bob.decrypt(u_item)
+
+    assert ref_plaintext == plaintext.decode()
 
 
 def test_errors():
@@ -148,4 +159,4 @@ if __name__ == "__main__":
     # test_legacy()
     # test_person_data(ref_plaintext)
     # test_pre()
-    test_errors()
+    # test_errors()

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from . import schemas
+from .. import schemas
 from . import crud
 from .models import engine
 
@@ -23,7 +23,7 @@ router = APIRouter(prefix="/users", tags=["users"])
     description="Creates a user",
 )
 def create_user(
-    user: schemas.UserModel = None,
+    user: schemas.UserModel,
     db: Session = Depends(get_db),
 ):
     return crud.create_user(db=db, user=user)

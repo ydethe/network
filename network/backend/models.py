@@ -1,7 +1,9 @@
-from base64 import b64decode
+from base64 import b64decode, b64encode
 from datetime import datetime, timedelta
 import os
 import logging
+from typing import Tuple
+import struct
 
 from sqlalchemy import (
     Column,
@@ -15,8 +17,10 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import sessionmaker
-from umbral import PublicKey, Signature
+from umbral import PublicKey, Signature, Capsule, VerifiedKeyFrag
 from umbral.hashing import Hash
+
+from ..transcoding import decodeKey
 
 
 logger = logging.getLogger(f"{__package__}_logger")
@@ -50,17 +54,9 @@ class DbUser(Base):
     #: List of the related records in person_data table
     person_data = relationship("PersonData", back_populates="user")
 
-    def decodeKeys(self):
-        pkey_bytes = b64decode(self.public_key.encode(encoding="ascii"))
-        pkey = PublicKey.from_bytes(pkey_bytes)
-
-        vkey_bytes = b64decode(self.verifying_key.encode(encoding="ascii"))
-        vkey = PublicKey.from_bytes(vkey_bytes)
-
-        return pkey, vkey
-
     def check_challenge(self, b64_hash: str, b64_sign: str, timeout: float) -> bool:
-        pkey, vkey = self.decodeKeys()
+        pkey = decodeKey(self.public_key)
+        vkey = decodeKey(self.verifying_key)
 
         bdt = b64decode(b64_hash.encode(encoding="ascii"))
         sdt = bdt.decode(encoding="ascii")

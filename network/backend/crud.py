@@ -2,8 +2,11 @@ from typing import List, Union
 
 from sqlalchemy.orm import Session
 
+from network.backend.Proxy import Proxy
+
 from . import models
-from . import schemas
+from .. import schemas
+from ..transcoding import db_bytes_to_encrypted, db_bytes_to_kfrag
 
 
 def list_persons(db: Session, user_id: int) -> List[int]:
@@ -42,3 +45,27 @@ def create_user(db: Session, user: schemas.UserModel) -> Union[schemas.UserModel
     db.commit()
     db.refresh(db_user)
     return schemas.UserModel.fromORM(db_user)
+
+
+def post_shared_data(
+    db: Session,
+    sender: schemas.UserModel,
+    recipient: schemas.UserModel,
+    db_kfrag: str,
+    encrypted_data: str,
+) -> Union[schemas.PersonDataModel, None]:
+    capsule, ciphertext = db_bytes_to_encrypted(encrypted_data)
+    kfrag = db_bytes_to_kfrag(db_kfrag)
+    u = Proxy()
+    cfrag = u.reencrypt(capsule, kfrag)
+    db_cfrag = Proxy.cfrag_to_db_bytes(cfrag)
+    db_item = models.PersonData(
+        user_id=recipient.id,
+        encrypted_data=encrypted_data,
+        cfrag=db_cfrag["cfrag"],
+        sender_pkey=sender.public_key,
+    )
+    db.add(db_item)
+    db.commit()
+    db.refresh(db_item)
+    return schemas.PersonDataModel.fromORM(db_item)

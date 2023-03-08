@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Path, Request
 from sqlalchemy.orm import Session
 
-from . import schemas
+from .. import schemas
 from . import crud
 from .models import engine
 from .auth_depend import challenge_auth

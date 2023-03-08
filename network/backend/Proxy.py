@@ -1,5 +1,3 @@
-from base64 import b64encode
-import struct
 from umbral import pre, VerifiedKeyFrag, VerifiedCapsuleFrag, Capsule
 
 

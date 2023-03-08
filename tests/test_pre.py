@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 from fastapi.testclient import TestClient
 
 from network.frontend.User import User
-from network.frontend.Proxy import Proxy
+from network.backend.Proxy import Proxy
 from network.backend import models
 from network.backend.main import app
 
@@ -98,6 +98,8 @@ def test_pre():
     # ===================================
     original_text = b"Je suis un poney"
     capsule, ciphertext = alice.encrypt(original_text)
+
+    # Only Alice can generate kfrags
     kfrags = alice.generate_kfrags(bob.public_key, threshold=10, shares=10)
 
     # ===================================

@@ -5,7 +5,7 @@ import uvicorn
 from fastapi import FastAPI
 import typer
 
-from . import person_router, user_router
+from . import person_router, user_router,pre_router
 
 
 tapp = typer.Typer()
@@ -19,6 +19,7 @@ app = FastAPI(
 
 app.include_router(person_router.router)
 app.include_router(user_router.router)
+app.include_router(pre_router.router)
 
 
 @tapp.command()

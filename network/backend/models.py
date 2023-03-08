@@ -99,3 +99,7 @@ class PersonData(Base):
     user = relationship("DbUser", back_populates="person_data")
 
     encrypted_data = Column(String, nullable=False)
+
+    cfrag = Column(String, nullable=True)
+
+    sender_pkey = Column(String, nullable=True)

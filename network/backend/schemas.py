@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Union
 
 from pydantic import BaseModel
 
@@ -10,15 +10,19 @@ class PersonDataModel(BaseModel):
     id: Optional[int]
     user_id: Optional[int]
     encrypted_data: str
+    cfrag: Optional[str]
+    sender_pkey: Optional[str]
 
     @classmethod
-    def fromORM(cls, obj: models.PersonData):
+    def fromORM(cls, obj: models.PersonData) -> Union["PersonDataModel", None]:
         if obj is None:
             return None
         res = cls(
             id=obj.id,
             user_id=obj.user_id,
             encrypted_data=obj.encrypted_data,
+            cfrag=obj.cfrag,
+            sender_pkey=obj.sender_pkey,
         )
         return res
 
@@ -31,7 +35,7 @@ class UserModel(BaseModel):
     time_updated: Optional[datetime]
 
     @classmethod
-    def fromORM(cls, obj: models.DbUser):
+    def fromORM(cls, obj: models.DbUser) -> Union["UserModel", None]:
         if obj is None:
             return None
         res = cls(

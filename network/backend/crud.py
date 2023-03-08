@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 from sqlalchemy.orm import Session
 
@@ -12,13 +12,15 @@ def list_persons(db: Session, user_id: int) -> List[int]:
     return res
 
 
-def get_person_data(db: Session, user_id: int, person_id: int) -> List[schemas.PersonDataModel]:
-    ores = (
+def get_person_data(
+    db: Session, user_id: int, person_id: int
+) -> Union[schemas.PersonDataModel, None]:
+    ores: models.DbUser = (
         db.query(models.PersonData)
         .filter(models.PersonData.user_id == user_id)
         .filter(models.PersonData.id == person_id)
         .first()
-    )
+    )  # type: ignore
     res = schemas.PersonDataModel.fromORM(ores)
     return res
 
@@ -26,7 +28,7 @@ def get_person_data(db: Session, user_id: int, person_id: int) -> List[schemas.P
 def create_person_data(
     db: Session,
     item: schemas.PersonDataModel,
-):
+) -> Union[schemas.PersonDataModel, None]:
     db_item = models.PersonData(**item.dict())
     db.add(db_item)
     db.commit()
@@ -34,7 +36,7 @@ def create_person_data(
     return schemas.PersonDataModel.fromORM(db_item)
 
 
-def create_user(db: Session, user: schemas.UserModel):
+def create_user(db: Session, user: schemas.UserModel) -> Union[schemas.UserModel, None]:
     db_user = models.DbUser(public_key=user.public_key, verifying_key=user.verifying_key)
     db.add(db_user)
     db.commit()

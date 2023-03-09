@@ -30,12 +30,13 @@ class User(object):
 
     """
 
-    def __init__(self, server_url: str, config_file: Path = None):
+    def __init__(self, server_url: str = "", config_file: Path = None):
         logger = logging.getLogger(f"network_logger")
 
         self.server_url = server_url
 
-        config_file = config_file.expanduser().resolve()
+        if not config_file is None:
+            config_file = config_file.expanduser().resolve()
         if config_file is None or not config_file.exists():
             # Key for encryption
             self.private_key = SecretKey.random()
@@ -45,11 +46,12 @@ class User(object):
             self.signing_key = SecretKey.random()
             self.verifying_key = self.signing_key.public_key()
 
-            r = requests.post(f"{self.server_url}/users/", json=self.to_json())
-            assert r.status_code == 200
-            self.id = r.json()["id"]
+            if self.server_url != "":
+                r = requests.post(f"{self.server_url}/users/", json=self.to_json())
+                assert r.status_code == 200
+                self.id = r.json()["id"]
 
-            logger.info(f"Created user id={self.id}")
+                logger.info(f"Created user id={self.id}")
 
         else:
             with open(config_file, "rb") as f:
@@ -268,6 +270,9 @@ class User(object):
         return kfrag_json
 
     def saveItemInDatabase(self, item: bytes) -> int:
+        if self.server_url == "":
+            raise AssertionError("No server_url attribute")
+
         data = self.encrypt_for_db(item)
 
         challenge_str = self.build_challenge()
@@ -280,6 +285,9 @@ class User(object):
         return data["id"]
 
     def loadItemFromDatabase(self, item_id: int) -> bytes:
+        if self.server_url == "":
+            raise AssertionError("No server_url attribute")
+
         challenge_str = self.build_challenge()
         r = requests.get(f"{self.server_url}/item/{item_id}", headers={"Challenge": challenge_str})
         if r.status_code != 200:
@@ -291,6 +299,9 @@ class User(object):
         return data
 
     def loadItemIdList(self) -> List[int]:
+        if self.server_url == "":
+            raise AssertionError("No server_url attribute")
+
         challenge_str = self.build_challenge()
         r = requests.get(f"{self.server_url}/item/", headers={"Challenge": challenge_str})
         assert r.status_code == 200

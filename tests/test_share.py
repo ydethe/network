@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from prepare import prepare_database
 
 
-class TestPRE(unittest.TestCase):
+class TestShare(unittest.TestCase):
     @classmethod
     def setUpClass(cls, ref_plaintext: str = "Président de la République Française"):
         cls.ref_plaintext = ref_plaintext
@@ -29,7 +29,7 @@ class TestPRE(unittest.TestCase):
         alice_cleartext = alice.decrypt(u_item)
         assert alice_cleartext == original_text
 
-    def test_pre(self):
+    def test_share(self):
         client = TestClient(app)
 
         alice = User(config_file=Path("tests/alice.topsecret"))
@@ -51,7 +51,7 @@ class TestPRE(unittest.TestCase):
         # Actual sending
         challenge_str = alice.build_challenge()
         r = client.post(
-            f"/pre/{item_id}/{bob.id}", headers={"Challenge": challenge_str}, json=kfrag_json
+            f"/share/{item_id}/{bob.id}", headers={"Challenge": challenge_str}, json=kfrag_json
         )
         assert r.status_code == 200
         item = r.json()
@@ -75,9 +75,9 @@ class TestPRE(unittest.TestCase):
 
         plaintext = bob.decrypt(u_item)
 
-        assert TestPRE.ref_plaintext == plaintext.decode()
+        assert TestShare.ref_plaintext == plaintext.decode()
 
-    def test_pre_errors(self):
+    def test_share_errors(self):
         client = TestClient(app)
 
         alice = User(config_file=Path("tests/alice.topsecret"))
@@ -93,7 +93,7 @@ class TestPRE(unittest.TestCase):
         item_id = 46435434
         challenge_str = alice.build_challenge()
         r = client.post(
-            f"/pre/{item_id}/{bob.id}", headers={"Challenge": challenge_str}, json=kfrag_json
+            f"/share/{item_id}/{bob.id}", headers={"Challenge": challenge_str}, json=kfrag_json
         )
         assert r.status_code == 404
         assert f"Item {item_id} not found" in r.json()["detail"]
@@ -109,7 +109,7 @@ class TestPRE(unittest.TestCase):
         recipient_id = 46435434
         challenge_str = alice.build_challenge()
         r = client.post(
-            f"/pre/{item_id}/{recipient_id}",
+            f"/share/{item_id}/{recipient_id}",
             headers={"Challenge": challenge_str},
             json=kfrag_json,
         )
@@ -118,7 +118,7 @@ class TestPRE(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    TestPRE.setUpClass()
-    a = TestPRE()
+    TestShare.setUpClass()
+    a = TestShare()
     # a.test_legacy()
-    a.test_pre_errors()
+    a.test_share()

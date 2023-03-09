@@ -48,7 +48,9 @@ class User(object):
 
             if self.server_url != "":
                 r = requests.post(f"{self.server_url}/users/", json=self.to_json())
-                assert r.status_code == 200
+                if r.status_code != 200:
+                    raise AssertionError(r.json()["detail"])
+
                 self.id = r.json()["id"]
 
                 logger.info(f"Created user id={self.id}")
@@ -279,7 +281,9 @@ class User(object):
         r = requests.post(
             f"{self.server_url}/item/", json=data, headers={"Challenge": challenge_str}
         )
-        assert r.status_code == 200
+        if r.status_code != 200:
+            raise AssertionError(r.json()["detail"])
+
         data = r.json()
 
         return data["id"]
@@ -304,6 +308,8 @@ class User(object):
 
         challenge_str = self.build_challenge()
         r = requests.get(f"{self.server_url}/item/", headers={"Challenge": challenge_str})
-        assert r.status_code == 200
+        if r.status_code != 200:
+            raise AssertionError(r.json()["detail"])
+
         data = r.json()
         return data

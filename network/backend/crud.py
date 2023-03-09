@@ -28,7 +28,7 @@ def get_item(db: Session, user_id: int, item_id: int) -> Union[schemas.ItemModel
     return res
 
 
-def delete_item(db: Session, user_id: int, item_id: int)->bool:
+def delete_item(db: Session, user_id: int, item_id: int) -> bool:
     ores: models.Item = (
         db.query(models.Item)
         .filter(models.Item.user_id == user_id)

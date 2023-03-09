@@ -27,6 +27,7 @@ def read_item_data(
         raise HTTPException(status_code=404, detail=f"Item {item_id} not found")
     return db_data
 
+
 @router.delete(
     "/{item_id}",
     description="Delete one item data for user",

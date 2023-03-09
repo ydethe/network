@@ -1,9 +1,11 @@
+import logging
 from pathlib import Path
 from datetime import datetime
 from typing import List
 import struct
 from base64 import b64encode
 
+import requests
 from umbral import (
     VerifiedKeyFrag,
     PublicKey,
@@ -28,8 +30,12 @@ class User(object):
 
     """
 
-    def __init__(self, config_file: Path = None):
-        if config_file is None:
+    def __init__(self, server_url: str, config_file: Path = None):
+        logger = logging.getLogger(f"{__package__}_logger")
+
+        self.server_url = server_url
+
+        if config_file is None or not config_file.exists():
             # Key for encryption
             self.private_key = SecretKey.random()
             self.public_key = self.private_key.public_key()
@@ -38,10 +44,14 @@ class User(object):
             self.signing_key = SecretKey.random()
             self.verifying_key = self.signing_key.public_key()
 
-            self.id = None
+            r = requests.post(f"{self.server_url}/users/", json=self.to_json())
+            assert r.status_code == 200
+            self.id = r.json()["id"]
+
+            logger.info(f"Created user id={self.id}")
 
         else:
-            with open(config_file, "rb") as f:
+            with open(config_file.expanduser().resolve(), "rb") as f:
                 dat = f.read()
 
             user_id, pkey_len = struct.unpack_from("<II", dat, offset=0)
@@ -56,6 +66,8 @@ class User(object):
             self.verifying_key = self.signing_key.public_key()
 
             self.id = user_id
+
+            logger.info(f"Loaded user id={self.id}")
 
     def to_json(self) -> dict:
         """Seralize the user for record it in the database
@@ -107,7 +119,7 @@ class User(object):
             len(skey),
             *skey,
         )
-        with open(path, "wb") as f:
+        with open(path.expanduser().resolve(), "wb") as f:
             f.write(dat)
 
     def build_challenge(self) -> str:
@@ -253,3 +265,26 @@ class User(object):
         kfrags = self.generate_kfrags(rx_public_key, threshold=1, shares=1)
         kfrag_json = kfrag_to_json(kfrags[0])
         return kfrag_json
+
+    def saveItemInDatabase(self, item: bytes) -> int:
+        data = self.encrypt_for_db(item)
+
+        challenge_str = self.build_challenge()
+        r = requests.post(
+            f"{self.server_url}/item/", json=data, headers={"Challenge": challenge_str}
+        )
+        assert r.status_code == 200
+        data = r.json()
+
+        return data["id"]
+
+    def loadItemFromDatabase(self, item_id: int) -> bytes:
+        challenge_str = self.build_challenge()
+        r = requests.get(f"{self.server_url}/item/{item_id}", headers={"Challenge": challenge_str})
+        if r.status_code != 200:
+            raise AssertionError(r.json()["detail"])
+
+        data = r.json()
+        data = self.decrypt_from_db(data)
+
+        return data

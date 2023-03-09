@@ -53,10 +53,11 @@ class TestItem(unittest.TestCase):
         assert "Trying to reuse a challenge" in r.json()["detail"]
 
         # Trying to access a non existing item
+        item_id = 6867474357
         challenge_str = alice.build_challenge()
-        r = client.get(f"/item/6867474357", headers={"Challenge": challenge_str})
+        r = client.get(f"/item/{item_id}", headers={"Challenge": challenge_str})
         assert r.status_code == 404
-        assert "Person data not found" in r.json()["detail"]
+        assert f"Item {item_id} not found" in r.json()["detail"]
 
 
 if __name__ == "__main__":

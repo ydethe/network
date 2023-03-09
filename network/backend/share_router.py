@@ -37,7 +37,7 @@ def post_reencrypted_data(
         db_recipient: DbUser = session.query(DbUser).filter(DbUser.id == recipient_id).first()  # type: ignore
 
     if db_item is None:
-        raise HTTPException(status_code=404, detail=f"Person data {item_id} not found")
+        raise HTTPException(status_code=404, detail=f"Item {item_id} not found")
 
     if db_recipient is None:
         raise HTTPException(status_code=404, detail=f"Recipient user {recipient_id} not found")

@@ -96,7 +96,7 @@ class TestPRE(unittest.TestCase):
             f"/pre/{item_id}/{bob.id}", headers={"Challenge": challenge_str}, json=kfrag_json
         )
         assert r.status_code == 404
-        assert f"Person data {item_id} not found" in r.json()["detail"]
+        assert f"Item {item_id} not found" in r.json()["detail"]
 
         # We send data for the first item in alice's list
         challenge_str = alice.build_challenge()

@@ -32,7 +32,7 @@ def read_item_data(
 ):
     db_data = crud.get_item(db, user_id, item_id)
     if db_data is None:
-        raise HTTPException(status_code=404, detail="Person data not found")
+        raise HTTPException(status_code=404, detail=f"Item {item_id} not found")
     return db_data
 
 

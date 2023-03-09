@@ -16,7 +16,7 @@ from umbral import (
 )
 from umbral.hashing import Hash
 
-from ..transcoding import datetime_to_challenge, encodeKey, encrypted_to_db_bytes, kfrag_to_db_bytes
+from ..transcoding import datetime_to_challenge, encodeKey, encrypted_to_json, kfrag_to_json
 from .. import schemas
 
 
@@ -147,11 +147,8 @@ class User(object):
 
         """
         u_item = self.encrypt(plaintext)
-        msg = encrypted_to_db_bytes(u_item.capsule, u_item.ciphertext)
-        db_data = {
-            "encrypted_data": msg,
-        }
-        return db_data
+        msg = encrypted_to_json(u_item.capsule, u_item.ciphertext)
+        return msg
 
     def decrypt(self, item: schemas.UmbralMessage) -> bytes:
         """Decrypt a message
@@ -228,5 +225,5 @@ class User(object):
 
         """
         kfrags = self.generate_kfrags(rx_public_key, threshold=1, shares=1)
-        kfrag_json = kfrag_to_db_bytes(kfrags[0])
+        kfrag_json = kfrag_to_json(kfrags[0])
         return kfrag_json

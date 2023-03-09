@@ -41,6 +41,10 @@ class ChallengeAuthentication(object):
 
         with con() as session:
             db_user = session.query(DbUser).filter(DbUser.id == user_id).first()
+            if db_user is None:
+                raise HTTPException(
+                    status_code=401, detail="The user making the challenge could not be found"
+                )
 
             challenge_response = db_user.check_challenge(
                 session, b64_hash, b64_sign, timeout=self.challenge_timeout

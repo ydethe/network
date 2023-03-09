@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from .. import schemas
@@ -35,6 +35,12 @@ def post_reencrypted_data(
         db_item = session.query(PersonData).filter(PersonData.id == person_id).first()
         db_sender: DbUser = session.query(DbUser).filter(DbUser.id == user_id).first()  # type: ignore
         db_recipient: DbUser = session.query(DbUser).filter(DbUser.id == recipient_id).first()  # type: ignore
+
+    if db_item is None:
+        raise HTTPException(status_code=404, detail=f"Person data {person_id} not found")
+
+    if db_recipient is None:
+        raise HTTPException(status_code=404, detail=f"Recipient user {recipient_id} not found")
 
     sender = schemas.UserModel.fromORM(db_sender)
     recipient = schemas.UserModel.fromORM(db_recipient)

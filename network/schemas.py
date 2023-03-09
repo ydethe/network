@@ -41,9 +41,16 @@ class PersonDataModel(BaseModel):
     sender_pkey: Optional[str]
 
     @classmethod
-    def fromORM(cls, obj: models.PersonData) -> Union["PersonDataModel", None]:
-        if obj is None:
-            return None
+    def fromORM(cls, obj: models.PersonData) -> "PersonDataModel":
+        """Build a PersonDataModel from a db record
+
+        Args:
+            obj: Database record
+
+        Returns:
+            A PersonDataModel instance
+
+        """
         res = cls(
             id=obj.id,
             user_id=obj.user_id,
@@ -85,9 +92,16 @@ class UserModel(BaseModel):
     time_updated: Optional[datetime]
 
     @classmethod
-    def fromORM(cls, obj: models.DbUser) -> Union["UserModel", None]:
-        if obj is None:
-            return None
+    def fromORM(cls, obj: models.DbUser) -> "UserModel":
+        """Build a UserModel from a db record
+
+        Args:
+            obj: Database record
+
+        Returns:
+            A UserModel instance
+
+        """
         res = cls(
             id=obj.id,
             public_key=obj.public_key,

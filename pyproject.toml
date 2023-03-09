@@ -72,7 +72,6 @@ doc = [
 test = [
     "pytest~=7.1.3",
     "pytest-cov~=3.0.0",
-    "pytest-mpl~=0.16.1",
     "pytest-xdist~=2.5.0",
     "pytest-mock~=3.8.2",
     "pytest-instafail~=0.4.2",
@@ -83,18 +82,12 @@ test = [
 
 [tool.pytest.ini_options]
 addopts = [
-    "--import-mode=importlib",
     "--html=build/htmldoc/tests/report.html",
     "--self-contained-html",
     "--junitxml=build/junit.xml",
     "--cov-config=tests/.coveragerc",
     "--cov=network",
     "--doctest-modules",
-    "--mpl",
-    "--mpl-generate-summary=html",
-    "--mpl-results-always",
-    "--mpl-baseline-path=tests/baseline",
-    "--mpl-results-path=build/htmldoc/tests/results"
 ]
 testpaths = [
     "tests/",
@@ -107,7 +100,7 @@ doc.shell = """\
     pdoc --html --force --config latex_math=True -o build/htmldoc network
     pyreverse -s0 network -k --colorized -p network -m no --ignore=exceptions.py -d build/htmldoc
     dot -Tpng build/htmldoc/classes_network.dot -o build/htmldoc/network/classes.png
-    coverage html -d build/htmldoc/coverage
+    coverage html -d build/htmldoc/coverage --rcfile=tests/.coveragerc
 """
 baseline.shell = "pytest --mpl-generate-path=tests/baseline tests"
 inst_doc.shell = """\

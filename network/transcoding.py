@@ -87,7 +87,7 @@ def db_bytes_to_cfrag(db_data: str) -> VerifiedCapsuleFrag:
     return cfrag
 
 
-def cfrag_to_db_bytes(cfrag: VerifiedCapsuleFrag) -> dict:
+def cfrag_to_json(cfrag: VerifiedCapsuleFrag) -> dict:
     """Codes a `VerifiedCapsuleFrag` for write in the database
 
     Args:
@@ -110,7 +110,7 @@ def cfrag_to_db_bytes(cfrag: VerifiedCapsuleFrag) -> dict:
     return {"cfrag": b64data}
 
 
-def kfrag_to_db_bytes(kfrag: VerifiedKeyFrag) -> dict:
+def kfrag_to_json(kfrag: VerifiedKeyFrag) -> dict:
     """Codes a `VerifiedKeyFrag` for write in the database
 
     Args:
@@ -132,7 +132,7 @@ def kfrag_to_db_bytes(kfrag: VerifiedKeyFrag) -> dict:
     return {"kfrag": b64data}
 
 
-def encrypted_to_db_bytes(capsule: Capsule, ciphertext: bytes) -> str:
+def encrypted_to_json(capsule: Capsule, ciphertext: bytes) -> dict:
     """Codes an encrypted for write in the database
 
     Args:
@@ -140,7 +140,7 @@ def encrypted_to_db_bytes(capsule: Capsule, ciphertext: bytes) -> str:
         ciphertext: The encrypted messages bytes
 
     Returns:
-        The database representation of the message
+        A dictionary with key 'encrypted_data' and the db value as a string
 
     """
     caps_sze = capsule.serialized_size()
@@ -154,7 +154,9 @@ def encrypted_to_db_bytes(capsule: Capsule, ciphertext: bytes) -> str:
         *ciphertext,
     )
     b64data = b64encode(dat).decode(encoding="ascii")
-    return b64data
+    return {
+        "encrypted_data": b64data,
+    }
 
 
 def db_bytes_to_encrypted(db_data: str) -> Tuple[Capsule, bytes]:

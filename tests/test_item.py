@@ -36,6 +36,15 @@ class TestItem(unittest.TestCase):
 
         assert TestItem.ref_plaintext == plaintext.decode()
 
+        challenge_str = alice.build_challenge()
+        r = client.delete(f"/item/{item_id}", headers={"Challenge": challenge_str})
+        assert r.status_code == 200
+
+        data=alice.encrypt_for_db(TestItem.ref_plaintext.encode())
+        challenge_str = alice.build_challenge()
+        r = client.post("/item/", json=data, headers={"Challenge": challenge_str})
+        assert r.status_code == 200
+
     def test_item_errors(self):
         client = TestClient(app)
 
@@ -59,8 +68,30 @@ class TestItem(unittest.TestCase):
         assert r.status_code == 404
         assert f"Item {item_id} not found" in r.json()["detail"]
 
+        # Trying to delete a non existing item
+        challenge_str = alice.build_challenge()
+        r = client.get("/item/", headers={"Challenge": challenge_str})
+        assert r.status_code == 200
+        data = r.json()
+        item_id = data[0]
+
+        challenge_str = alice.build_challenge()
+        r = client.delete(f"/item/{item_id}", headers={"Challenge": challenge_str})
+        assert r.status_code == 200
+
+        challenge_str = alice.build_challenge()
+        r = client.delete(f"/item/{item_id}", headers={"Challenge": challenge_str})
+        assert r.status_code == 404
+
+        data=alice.encrypt_for_db(TestItem.ref_plaintext.encode())
+        challenge_str = alice.build_challenge()
+        r = client.post("/item/", json=data, headers={"Challenge": challenge_str})
+        assert r.status_code == 200
+
 
 if __name__ == "__main__":
     TestItem.setUpClass()
     a = TestItem()
-    a.test_item_data()
+    # a.test_item_data()
+    a.test_item_errors()
+

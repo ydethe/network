@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import requests
 from network.frontend.User import User
 
 

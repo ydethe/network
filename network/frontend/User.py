@@ -31,10 +31,11 @@ class User(object):
     """
 
     def __init__(self, server_url: str, config_file: Path = None):
-        logger = logging.getLogger(f"{__package__}_logger")
+        logger = logging.getLogger(f"network_logger")
 
         self.server_url = server_url
 
+        config_file = config_file.expanduser().resolve()
         if config_file is None or not config_file.exists():
             # Key for encryption
             self.private_key = SecretKey.random()
@@ -51,7 +52,7 @@ class User(object):
             logger.info(f"Created user id={self.id}")
 
         else:
-            with open(config_file.expanduser().resolve(), "rb") as f:
+            with open(config_file, "rb") as f:
                 dat = f.read()
 
             user_id, pkey_len = struct.unpack_from("<II", dat, offset=0)
@@ -287,4 +288,11 @@ class User(object):
         data = r.json()
         data = self.decrypt_from_db(data)
 
+        return data
+
+    def loadItemIdList(self) -> List[int]:
+        challenge_str = self.build_challenge()
+        r = requests.get(f"{self.server_url}/item/", headers={"Challenge": challenge_str})
+        assert r.status_code == 200
+        data = r.json()
         return data

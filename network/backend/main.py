@@ -49,7 +49,7 @@ def run_server(
     workers: int = typer.Option(1, help="Number of workers"),
     test: bool = typer.Option(False, help="Flag to run the server for only one second"),
 ):
-    logger = logging.getLogger(f"{__package__}_logger")
+    logger = logging.getLogger(f"network_logger")
     logger.info(
         f"""Running app with arguments (root_path='{os.environ.get("ROOT_PATH", "")}', workers={workers}, reload={reload})"""
     )

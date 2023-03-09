@@ -19,7 +19,7 @@ from umbral.hashing import Hash
 from ..transcoding import challenge_to_datetime, decodeKey
 
 
-logger = logging.getLogger(f"{__package__}_logger")
+logger = logging.getLogger(f"network_logger")
 
 Base = declarative_base()
 

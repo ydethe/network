@@ -41,7 +41,7 @@ import logging
 from rich.logging import RichHandler
 
 
-logger = logging.getLogger(f"{__package__}_logger")
+logger = logging.getLogger(f"network_logger")
 logger.setLevel(os.environ.get("LOGLEVEL", "INFO").upper())
 
 stream_handler = RichHandler()

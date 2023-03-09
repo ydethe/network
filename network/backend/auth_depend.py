@@ -4,11 +4,34 @@ from .models import DbUser, con
 
 
 class ChallengeAuthentication(object):
+    """This class can be used as a fastapi Depends for the endpoints that needs authentication.
+
+    Args:
+        challenge_timeout: Timeout for the challenge (s)
+
+    """
+
     def __init__(self, challenge_timeout: float):
         self.challenge_timeout = challenge_timeout
 
     @staticmethod
     def analyse_header(headers: dict) -> dict:
+        """Analyse headers to find a valid a valid challenge.
+        If found, return a dictionary whose keys are:
+
+        * user_id: The id of the authenticating user
+        * b64_hash: the challenge's hash as raw string
+        * b64_sign: The challenge's signature as raw string
+
+        `network.backend.models.DbUser.check_challenge` can use the raw strings to check the challenge
+
+        Args:
+            headers: The headers dictionary as contained in fastapi Request objects
+
+        Returns:
+            The challenge as a dictionary
+
+        """
         key = "challenge"
         if not key in headers.keys():
             key = "Challenge"
@@ -40,7 +63,7 @@ class ChallengeAuthentication(object):
         b64_sign = response["b64_sign"]
 
         with con() as session:
-            db_user = session.query(DbUser).filter(DbUser.id == user_id).first()
+            db_user: DbUser = session.query(DbUser).filter(DbUser.id == user_id).first()
             if db_user is None:
                 raise HTTPException(
                     status_code=401, detail="The user making the challenge could not be found"

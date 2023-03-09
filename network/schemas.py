@@ -61,6 +61,13 @@ class PersonDataModel(BaseModel):
         return res
 
     def toUmbral(self) -> UmbralMessage:
+        """Convert PersonDataModel, which is the database representation,
+        to a class whose attributes are umbral objects
+
+        Returns:
+            A class whose attributes are umbral objects
+
+        """
         capsule, ciphertext = db_bytes_to_encrypted(self.encrypted_data)
         if self.cfrag is None:
             cfrag = None

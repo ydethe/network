@@ -53,6 +53,29 @@ class DbUser(Base):
     def check_challenge(
         self, session: Session, b64_hash: str, b64_sign: str, timeout: float
     ) -> dict:
+        """Check if the proposed challenge is valid. The challenge consists in b64_hash and b64_sign.
+        The conditions to succeed in checking the challenge are :
+
+        * the signature matches the user's verifying key
+        * a datetime object can be retrieved from b64_hash
+        * this datetime object is different from the last challenge datetime (stored in the database)
+        * this datetime object is at most timeout seconds before now
+
+        The returned dictionary has the following keys:
+
+        * status: 200 in case of success, 401 otherwise
+        * message: A message that explains the reason of the failure
+
+        Args:
+            session: A SQLAlchemy session to update the last challenge datetime
+            b64_hash: The challenge hash
+            b64_sign: The challenge signature
+            timeout: The timeout to invalidate old challenges
+
+        Returns:
+            A dictionary that gives the status of the check
+
+        """
         vkey = decodeKey(self.verifying_key)
 
         challenge_data = challenge_to_datetime(b64_hash)

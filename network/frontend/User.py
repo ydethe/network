@@ -57,7 +57,21 @@ class User(object):
 
             self.id = user_id
 
-    def to_json(self):
+    def to_json(self) -> dict:
+        """Seralize the user for record it in the database
+
+        The keys are :
+
+        * id: Set to None because handled by the database
+        * public_key: The public key as database string
+        * verifying_key: The verifying_key key as database string
+        * time_created: Set to None because handled by the database
+        * time_updated: Set to None because handled by the database
+
+        Returns:
+            The dictonary for the database
+
+        """
         pkey = encodeKey(self.public_key)
         vkey = encodeKey(self.verifying_key)
 
@@ -70,6 +84,12 @@ class User(object):
         }
 
     def writeConfigurationFile(self, path: Path):
+        """Save user's information in a top secret file
+
+        Args:
+            path: Path where the data should be written. Shall have a .topsecret extension
+
+        """
         if self.id is None:
             raise AssertionError(
                 "User not registered in database. Cannot write the .topsecret file"
@@ -91,6 +111,12 @@ class User(object):
             f.write(dat)
 
     def build_challenge(self) -> str:
+        """Build a string that can be sent as auth challenge to the server
+
+        Returns:
+            A challenge
+
+        """
         if self.id is None:
             raise AssertionError(
                 "User not registered in database. Cannot write the .topsecret file"
@@ -143,7 +169,7 @@ class User(object):
             plaintext: Clear content. Ca be anything
 
         Returns:
-            The string for the database
+            A dictionary with key 'encrypted_data' and the db value as a string
 
         """
         u_item = self.encrypt(plaintext)
@@ -221,7 +247,7 @@ class User(object):
             rx_public_key: The public key of the receiver
 
         Returns:
-            A list of kfrags
+            A dictionary with key 'kfrag' and the db value as a string
 
         """
         kfrags = self.generate_kfrags(rx_public_key, threshold=1, shares=1)

@@ -9,36 +9,34 @@ from .. import schemas
 from ..transcoding import cfrag_to_json, db_bytes_to_encrypted, db_bytes_to_kfrag
 
 
-def list_persons(db: Session, user_id: int) -> List[int]:
-    lores = db.query(models.PersonData).filter(models.PersonData.user_id == user_id).all()
+def list_items(db: Session, user_id: int) -> List[int]:
+    lores = db.query(models.Item).filter(models.Item.user_id == user_id).all()
     res = [ores.id for ores in lores]
     return res
 
 
-def get_person_data(
-    db: Session, user_id: int, person_id: int
-) -> Union[schemas.PersonDataModel, None]:
+def get_item(db: Session, user_id: int, item_id: int) -> Union[schemas.ItemModel, None]:
     ores: models.DbUser = (
-        db.query(models.PersonData)
-        .filter(models.PersonData.user_id == user_id)
-        .filter(models.PersonData.id == person_id)
+        db.query(models.Item)
+        .filter(models.Item.user_id == user_id)
+        .filter(models.Item.id == item_id)
         .first()
     )  # type: ignore
     if ores is None:
         return None
-    res = schemas.PersonDataModel.fromORM(ores)
+    res = schemas.ItemModel.fromORM(ores)
     return res
 
 
-def create_person_data(
+def create_item(
     db: Session,
-    item: schemas.PersonDataModel,
-) -> Union[schemas.PersonDataModel, None]:
-    db_item = models.PersonData(**item.dict())
+    item: schemas.ItemModel,
+) -> Union[schemas.ItemModel, None]:
+    db_item = models.Item(**item.dict())
     db.add(db_item)
     db.commit()
     db.refresh(db_item)
-    return schemas.PersonDataModel.fromORM(db_item)
+    return schemas.ItemModel.fromORM(db_item)
 
 
 def create_user(db: Session, user: schemas.UserModel) -> Union[schemas.UserModel, None]:
@@ -49,19 +47,19 @@ def create_user(db: Session, user: schemas.UserModel) -> Union[schemas.UserModel
     return schemas.UserModel.fromORM(db_user)
 
 
-def post_shared_data(
+def post_shared_item(
     db: Session,
     sender: schemas.UserModel,
     recipient: schemas.UserModel,
     db_kfrag: str,
     encrypted_data: str,
-) -> Union[schemas.PersonDataModel, None]:
+) -> Union[schemas.ItemModel, None]:
     capsule, ciphertext = db_bytes_to_encrypted(encrypted_data)
     kfrag = db_bytes_to_kfrag(db_kfrag)
     u = Proxy()
     cfrag = u.reencrypt(capsule, kfrag)
     db_cfrag = cfrag_to_json(cfrag)
-    db_item = models.PersonData(
+    db_item = models.Item(
         user_id=recipient.id,
         encrypted_data=encrypted_data,
         cfrag=db_cfrag["cfrag"],
@@ -70,4 +68,4 @@ def post_shared_data(
     db.add(db_item)
     db.commit()
     db.refresh(db_item)
-    return schemas.PersonDataModel.fromORM(db_item)
+    return schemas.ItemModel.fromORM(db_item)

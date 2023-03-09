@@ -47,8 +47,8 @@ class DbUser(Base):
 
     time_updated = Column(DateTime(timezone=True), onupdate=func.now())
 
-    #: List of the related records in person_data table
-    person_data = relationship("PersonData", back_populates="user")
+    #: List of the related records in items table
+    items = relationship("Item", back_populates="user")
 
     def check_challenge(
         self, session: Session, b64_hash: str, b64_sign: str, timeout: float
@@ -122,9 +122,9 @@ class DbUser(Base):
             return response
 
 
-class PersonData(Base):
+class Item(Base):
 
-    __tablename__ = "person_data"
+    __tablename__ = "items"
 
     #: Unique identifier of the session
     id = Column(Integer, nullable=False, primary_key=True)
@@ -133,7 +133,7 @@ class PersonData(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     #: Session instance the observation belongs to
-    user = relationship("DbUser", back_populates="person_data")
+    user = relationship("DbUser", back_populates="items")
 
     encrypted_data = Column(String, nullable=False)
 

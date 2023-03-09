@@ -33,7 +33,7 @@ class CfragModel(BaseModel):
     cfrag: str
 
 
-class PersonDataModel(BaseModel):
+class ItemModel(BaseModel):
     id: Optional[int]
     user_id: Optional[int]
     encrypted_data: str
@@ -41,14 +41,14 @@ class PersonDataModel(BaseModel):
     sender_pkey: Optional[str]
 
     @classmethod
-    def fromORM(cls, obj: models.PersonData) -> "PersonDataModel":
-        """Build a PersonDataModel from a db record
+    def fromORM(cls, obj: models.Item) -> "ItemModel":
+        """Build a ItemModel from a db record
 
         Args:
             obj: Database record
 
         Returns:
-            A PersonDataModel instance
+            A ItemModel instance
 
         """
         res = cls(
@@ -61,7 +61,7 @@ class PersonDataModel(BaseModel):
         return res
 
     def toUmbral(self) -> UmbralMessage:
-        """Convert PersonDataModel, which is the database representation,
+        """Convert ItemModel, which is the database representation,
         to a class whose attributes are umbral objects
 
         Returns:

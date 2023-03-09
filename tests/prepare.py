@@ -37,7 +37,7 @@ def prepare_database(ref_plaintext: str = "Président de la République Françai
     data = alice.encrypt_for_db(ref_plaintext.encode())
 
     challenge_str = alice.build_challenge()
-    r = client.post("/person/", json=data, headers={"Challenge": challenge_str})
+    r = client.post("/item/", json=data, headers={"Challenge": challenge_str})
     assert r.status_code == 200
     data = r.json()
 

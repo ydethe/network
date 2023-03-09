@@ -24,13 +24,13 @@ class TestAuthentication(unittest.TestCase):
 
         alice = User(config_file=Path("alice.topsecret"))
 
-        r = client.get("/person/")
+        r = client.get("/item/")
         assert r.status_code == 401
         assert r.json()["detail"] == "No challenge provided with the request"
 
         # ==============================================================================
 
-        r = client.get("/person/", headers={"Challenge": "false"})
+        r = client.get("/item/", headers={"Challenge": "false"})
         assert r.status_code == 401
         assert (
             "Invalid format for challenge. Shall be <user_id>:<b64_hash>:<b64_sign>"
@@ -41,7 +41,7 @@ class TestAuthentication(unittest.TestCase):
 
         challenge_str = alice.build_challenge()
         time.sleep(challenge_auth.challenge_timeout + 1)
-        r = client.get("/person/", headers={"Challenge": challenge_str})
+        r = client.get("/item/", headers={"Challenge": challenge_str})
         assert r.status_code == 401
         assert "Challenge expired" in r.json()["detail"]
 
@@ -52,7 +52,7 @@ class TestAuthentication(unittest.TestCase):
         elem = challenge_str.split(":")
         elem[0] = "1245636"
         challenge_str = ":".join(elem)
-        r = client.get("/person/", headers={"Challenge": challenge_str})
+        r = client.get("/item/", headers={"Challenge": challenge_str})
         assert r.status_code == 401
         assert "The user making the challenge could not be found" in r.json()["detail"]
 
@@ -67,7 +67,7 @@ class TestAuthentication(unittest.TestCase):
             b64_hash = "a" + elem[1][1:]
         elem[1] = b64_hash
         challenge_str = ":".join(elem)
-        r = client.get("/person/", headers={"Challenge": challenge_str})
+        r = client.get("/item/", headers={"Challenge": challenge_str})
         assert r.status_code == 401
         assert "Impossible to get timestamp from challenge" in r.json()["detail"]
 
@@ -82,7 +82,7 @@ class TestAuthentication(unittest.TestCase):
             b64_sign = "a" + elem[2][1:]
         elem[2] = b64_sign
         challenge_str = ":".join(elem)
-        r = client.get("/person/", headers={"Challenge": challenge_str})
+        r = client.get("/item/", headers={"Challenge": challenge_str})
         assert r.status_code == 401
         assert "Invalid challenge signature" in r.json()["detail"]
 

@@ -17,19 +17,19 @@ class TestItem(unittest.TestCase):
         cls.ref_plaintext = ref_plaintext
         prepare_database(ref_plaintext)
 
-    def test_person_data(self):
+    def test_item_data(self):
         client = TestClient(app)
 
         alice = User(config_file=Path("alice.topsecret"))
 
         challenge_str = alice.build_challenge()
-        r = client.get("/person/", headers={"Challenge": challenge_str})
+        r = client.get("/item/", headers={"Challenge": challenge_str})
         assert r.status_code == 200
         data = r.json()
-        person_id = data[0]
+        item_id = data[0]
 
         challenge_str = alice.build_challenge()
-        r = client.get(f"/person/{person_id}", headers={"Challenge": challenge_str})
+        r = client.get(f"/item/{item_id}", headers={"Challenge": challenge_str})
         assert r.status_code == 200
 
         plaintext = alice.decrypt_from_db(r.json())
@@ -42,19 +42,19 @@ class TestItem(unittest.TestCase):
         alice = User(config_file=Path("alice.topsecret"))
 
         challenge_str = alice.build_challenge()
-        r = client.get("/person/", headers={"Challenge": challenge_str})
+        r = client.get("/item/", headers={"Challenge": challenge_str})
         assert r.status_code == 200
         data = r.json()
-        person_id = data[0]
+        item_id = data[0]
 
         # Trying to reuse a challenge (forbidden !!!)
-        r = client.get(f"/person/{person_id}", headers={"Challenge": challenge_str})
+        r = client.get(f"/item/{item_id}", headers={"Challenge": challenge_str})
         assert r.status_code == 401
         assert "Trying to reuse a challenge" in r.json()["detail"]
 
-        # Trying to access a non existing person
+        # Trying to access a non existing item
         challenge_str = alice.build_challenge()
-        r = client.get(f"/person/6867474357", headers={"Challenge": challenge_str})
+        r = client.get(f"/item/6867474357", headers={"Challenge": challenge_str})
         assert r.status_code == 404
         assert "Person data not found" in r.json()["detail"]
 
@@ -62,4 +62,4 @@ class TestItem(unittest.TestCase):
 if __name__ == "__main__":
     TestItem.setUpClass()
     a = TestItem()
-    a.test_person_data()
+    a.test_item_data()

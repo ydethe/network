@@ -16,21 +16,21 @@ def get_db():
         db.close()
 
 
-router = APIRouter(prefix="/person", tags=["person"])
+router = APIRouter(prefix="/item", tags=["item"])
 
 
 @router.get(
-    "/{person_id}",
-    response_model=schemas.PersonDataModel,
-    description="Retrive one person data for user",
+    "/{item_id}",
+    response_model=schemas.ItemModel,
+    description="Retrive one item data for user",
 )
-def read_person_data(
+def read_item_data(
     request: Request,
-    person_id: int = Path(description="ID of the person to retrieve"),
+    item_id: int = Path(description="ID of the item to retrieve"),
     db: Session = Depends(get_db),
     user_id: int = Depends(challenge_auth),
 ):
-    db_data = crud.get_person_data(db, user_id, person_id)
+    db_data = crud.get_item(db, user_id, item_id)
     if db_data is None:
         raise HTTPException(status_code=404, detail="Person data not found")
     return db_data
@@ -39,28 +39,28 @@ def read_person_data(
 @router.get(
     "/",
     response_model=List[int],
-    description="Retrive the list of person data for user",
+    description="Retrive the list of item data for user",
 )
-def list_persons(
+def list_items(
     request: Request,
     db: Session = Depends(get_db),
     user_id: int = Depends(challenge_auth),
 ):
-    db_data = crud.list_persons(db, user_id)
+    db_data = crud.list_items(db, user_id)
     return db_data
 
 
 @router.post(
     "/",
-    response_model=schemas.PersonDataModel,
-    description="Creates one person data for user",
+    response_model=schemas.ItemModel,
+    description="Creates one item data for user",
 )
-def create_person_data(
+def create_item(
     request: Request,
-    item: schemas.PersonDataModel = None,
+    item: schemas.ItemModel = None,
     db: Session = Depends(get_db),
     user_id: int = Depends(challenge_auth),
 ):
     item.user_id = user_id
 
-    return crud.create_person_data(db=db, item=item)
+    return crud.create_item(db=db, item=item)

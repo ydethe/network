@@ -211,7 +211,7 @@ class User(object):
             The plaintext message
 
         """
-        item = schemas.PersonDataModel(**db_data)
+        item = schemas.ItemModel(**db_data)
         u_item = item.toUmbral()
         cleartext = self.decrypt(u_item)
         return cleartext

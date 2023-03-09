@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from .. import schemas
 from . import crud
-from .models import engine, con, DbUser, PersonData
+from .models import engine, con, DbUser, Item
 from .auth_depend import challenge_auth
 
 
@@ -19,25 +19,25 @@ router = APIRouter(prefix="/pre", tags=["pre"])
 
 
 @router.post(
-    "/{person_id}/{recipient_id}",
-    response_model=schemas.PersonDataModel,
-    description="Creates one person data for user",
+    "/{item_id}/{recipient_id}",
+    response_model=schemas.ItemModel,
+    description="Creates one item data for user",
 )
 def post_reencrypted_data(
     request: Request,
-    person_id: int,
+    item_id: int,
     recipient_id: int,
     kfrag: schemas.KfragModel,
     db: Session = Depends(get_db),
     user_id: int = Depends(challenge_auth),
 ):
     with con() as session:
-        db_item = session.query(PersonData).filter(PersonData.id == person_id).first()
+        db_item = session.query(Item).filter(Item.id == item_id).first()
         db_sender: DbUser = session.query(DbUser).filter(DbUser.id == user_id).first()  # type: ignore
         db_recipient: DbUser = session.query(DbUser).filter(DbUser.id == recipient_id).first()  # type: ignore
 
     if db_item is None:
-        raise HTTPException(status_code=404, detail=f"Person data {person_id} not found")
+        raise HTTPException(status_code=404, detail=f"Person data {item_id} not found")
 
     if db_recipient is None:
         raise HTTPException(status_code=404, detail=f"Recipient user {recipient_id} not found")
@@ -45,7 +45,7 @@ def post_reencrypted_data(
     sender = schemas.UserModel.fromORM(db_sender)
     recipient = schemas.UserModel.fromORM(db_recipient)
 
-    return crud.post_shared_data(
+    return crud.post_shared_item(
         db=db,
         sender=sender,
         recipient=recipient,

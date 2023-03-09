@@ -16,7 +16,7 @@ def list_items(db: Session, user_id: int) -> List[int]:
 
 
 def get_item(db: Session, user_id: int, item_id: int) -> Union[schemas.ItemModel, None]:
-    ores: models.DbUser = (
+    ores: models.Item = (
         db.query(models.Item)
         .filter(models.Item.user_id == user_id)
         .filter(models.Item.id == item_id)
@@ -26,6 +26,20 @@ def get_item(db: Session, user_id: int, item_id: int) -> Union[schemas.ItemModel
         return None
     res = schemas.ItemModel.fromORM(ores)
     return res
+
+
+def delete_item(db: Session, user_id: int, item_id: int)->bool:
+    ores: models.Item = (
+        db.query(models.Item)
+        .filter(models.Item.user_id == user_id)
+        .filter(models.Item.id == item_id)
+        .first()
+    )  # type: ignore
+    if ores is None:
+        return False
+    db.delete(ores)
+    db.commit()
+    return True
 
 
 def create_item(

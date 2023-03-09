@@ -4,16 +4,8 @@ from sqlalchemy.orm import Session
 
 from .. import schemas
 from . import crud
-from .models import engine
+from .models import get_db
 from .auth_depend import challenge_auth
-
-
-def get_db():
-    db = Session(engine)
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 router = APIRouter(prefix="/item", tags=["item"])
@@ -34,6 +26,20 @@ def read_item_data(
     if db_data is None:
         raise HTTPException(status_code=404, detail=f"Item {item_id} not found")
     return db_data
+
+@router.delete(
+    "/{item_id}",
+    description="Delete one item data for user",
+)
+def delete_item_data(
+    request: Request,
+    item_id: int = Path(description="ID of the item to retrieve"),
+    db: Session = Depends(get_db),
+    user_id: int = Depends(challenge_auth),
+):
+    ok = crud.delete_item(db, user_id, item_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail=f"Item {item_id} not found")
 
 
 @router.get(

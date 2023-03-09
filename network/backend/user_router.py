@@ -3,15 +3,7 @@ from sqlalchemy.orm import Session
 
 from .. import schemas
 from . import crud
-from .models import engine
-
-
-def get_db():
-    db = Session(engine)
-    try:
-        yield db
-    finally:
-        db.close()
+from .models import get_db
 
 
 router = APIRouter(prefix="/users", tags=["users"])

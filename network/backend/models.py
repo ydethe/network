@@ -30,6 +30,14 @@ engine = create_engine(db_uri, echo=False, future=True)
 con = sessionmaker(engine)
 
 
+def get_db():
+    db = Session(engine)
+    try:
+        yield db
+    finally:
+        db.close()
+
+
 class DbUser(Base):
 
     __tablename__ = "users"

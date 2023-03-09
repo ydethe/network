@@ -3,16 +3,8 @@ from sqlalchemy.orm import Session
 
 from .. import schemas
 from . import crud
-from .models import engine, con, DbUser, Item
+from .models import get_db, con, DbUser, Item
 from .auth_depend import challenge_auth
-
-
-def get_db():
-    db = Session(engine)
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 router = APIRouter(prefix="/share", tags=["share"])

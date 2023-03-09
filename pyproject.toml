@@ -16,7 +16,6 @@ dependencies = [
     "psycopg2-binary~=2.9",
     "httpx~=0.23",
     "rich~=13.3",
-    "alembic~=1.10",
 ]
 requires-python = ">=3.8,<3.12"
 
@@ -63,6 +62,7 @@ excludes = [
 
 [tool.pdm.dev-dependencies]
 dev = [
+    "alembic~=1.10",
     "ipython~=7.23.1",
     "black==22.3.0",
 ]

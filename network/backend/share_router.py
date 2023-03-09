@@ -15,7 +15,7 @@ def get_db():
         db.close()
 
 
-router = APIRouter(prefix="/pre", tags=["pre"])
+router = APIRouter(prefix="/share", tags=["pre"])
 
 
 @router.post(

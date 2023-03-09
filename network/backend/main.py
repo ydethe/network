@@ -8,7 +8,7 @@ import uvicorn
 from fastapi import FastAPI
 import typer
 
-from . import item_router, user_router, pre_router
+from . import item_router, user_router, share_router
 
 
 tapp = typer.Typer()
@@ -22,7 +22,7 @@ app = FastAPI(
 
 app.include_router(item_router.router)
 app.include_router(user_router.router)
-app.include_router(pre_router.router)
+app.include_router(share_router.router)
 
 
 class Server(uvicorn.Server):

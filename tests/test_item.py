@@ -20,7 +20,7 @@ class TestItem(unittest.TestCase):
     def test_item_data(self):
         client = TestClient(app)
 
-        alice = User(config_file=Path("alice.topsecret"))
+        alice = User(config_file=Path("tests/alice.topsecret"))
 
         challenge_str = alice.build_challenge()
         r = client.get("/item/", headers={"Challenge": challenge_str})
@@ -39,7 +39,7 @@ class TestItem(unittest.TestCase):
     def test_item_errors(self):
         client = TestClient(app)
 
-        alice = User(config_file=Path("alice.topsecret"))
+        alice = User(config_file=Path("tests/alice.topsecret"))
 
         challenge_str = alice.build_challenge()
         r = client.get("/item/", headers={"Challenge": challenge_str})

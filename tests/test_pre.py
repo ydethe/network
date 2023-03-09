@@ -19,7 +19,7 @@ class TestPRE(unittest.TestCase):
         prepare_database(ref_plaintext)
 
     def test_legacy(self):
-        alice = User(config_file=Path("alice.topsecret"))
+        alice = User(config_file=Path("tests/alice.topsecret"))
 
         # ===================================
         # Alice prepares her message to send
@@ -32,8 +32,8 @@ class TestPRE(unittest.TestCase):
     def test_pre(self):
         client = TestClient(app)
 
-        alice = User(config_file=Path("alice.topsecret"))
-        bob = User(config_file=Path("bob.topsecret"))
+        alice = User(config_file=Path("tests/alice.topsecret"))
+        bob = User(config_file=Path("tests/bob.topsecret"))
 
         # ===================================
         # Alice prepares her message to send
@@ -80,8 +80,8 @@ class TestPRE(unittest.TestCase):
     def test_pre_errors(self):
         client = TestClient(app)
 
-        alice = User(config_file=Path("alice.topsecret"))
-        bob = User(config_file=Path("bob.topsecret"))
+        alice = User(config_file=Path("tests/alice.topsecret"))
+        bob = User(config_file=Path("tests/bob.topsecret"))
 
         # ===================================
         # Alice prepares her message to send

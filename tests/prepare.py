@@ -26,13 +26,13 @@ def prepare_database(ref_plaintext: str = "Président de la République Françai
     r = client.post("/users/", json=alice.to_json())
     assert r.status_code == 200
     alice.id = r.json()["id"]
-    alice.writeConfigurationFile(Path("alice.topsecret"))
+    alice.writeConfigurationFile(Path("tests/alice.topsecret"))
 
     bob = User()
     r = client.post("/users/", json=bob.to_json())
     assert r.status_code == 200
     bob.id = r.json()["id"]
-    bob.writeConfigurationFile(Path("bob.topsecret"))
+    bob.writeConfigurationFile(Path("tests/bob.topsecret"))
 
     data = alice.encrypt_for_db(ref_plaintext.encode())
 

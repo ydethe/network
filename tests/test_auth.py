@@ -22,7 +22,7 @@ class TestAuthentication(unittest.TestCase):
     def test_auth_errors(self):
         client = TestClient(app)
 
-        alice = User(config_file=Path("alice.topsecret"))
+        alice = User(config_file=Path("tests/alice.topsecret"))
 
         r = client.get("/item/")
         assert r.status_code == 401

@@ -313,3 +313,14 @@ class User(object):
 
         data = r.json()
         return data
+
+    def deleteItemFromDatabase(self, item_id: int):
+        if self.server_url == "":
+            raise AssertionError("No server_url attribute")
+
+        challenge_str = self.build_challenge()
+        r = requests.delete(
+            f"{self.server_url}/item/{item_id}", headers={"Challenge": challenge_str}
+        )
+        if r.status_code != 200:
+            raise AssertionError(r.json()["detail"])

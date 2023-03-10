@@ -39,9 +39,14 @@ class TestFrontend(unittest.TestCase):
             l_id = eve.loadItemIdList()
             assert test_id in l_id
 
-            plaintext = eve.loadItemFromDatabase(l_id[0])
+            item_id = l_id[0]
+            plaintext = eve.loadItemFromDatabase(item_id)
 
             assert ref_plaintext == plaintext.decode(encoding="utf-8")
+
+            eve.deleteItemFromDatabase(item_id)
+            l_id = eve.loadItemIdList()
+            assert not item_id in l_id
 
 
 if __name__ == "__main__":

@@ -20,16 +20,30 @@ def prepare_database(ref_plaintext: str = "Président de la République Françai
     target_metadata = models.Base.metadata
     target_metadata.create_all(engine)
 
+    admin = User()
+    data = admin.to_json()
+    db_admin = models.DbUser(
+        admin=True, public_key=data["public_key"], verifying_key=data["verifying_key"]
+    )
+    with models.con() as session:
+        session.add(db_admin)
+        session.commit()
+        session.refresh(db_admin)
+        admin.id = db_admin.id
+    admin.writeConfigurationFile(Path("tests/admin.topsecret"))
+
     client = TestClient(app)
 
     alice = User()
-    r = client.post("/users/", json=alice.to_json())
+    challenge_str = admin.build_challenge()
+    r = client.post("/users/", json=alice.to_json(), headers={"Challenge": challenge_str})
     assert r.status_code == 200
     alice.id = r.json()["id"]
     alice.writeConfigurationFile(Path("tests/alice.topsecret"))
 
     bob = User()
-    r = client.post("/users/", json=bob.to_json())
+    challenge_str = admin.build_challenge()
+    r = client.post("/users/", json=bob.to_json(), headers={"Challenge": challenge_str})
     assert r.status_code == 200
     bob.id = r.json()["id"]
     bob.writeConfigurationFile(Path("tests/bob.topsecret"))

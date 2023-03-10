@@ -46,14 +46,7 @@ class User(object):
             self.signing_key = SecretKey.random()
             self.verifying_key = self.signing_key.public_key()
 
-            if self.server_url != "":
-                r = requests.post(f"{self.server_url}/users/", json=self.to_json())
-                if r.status_code != 200:
-                    raise AssertionError(r.json()["detail"])
-
-                self.id = r.json()["id"]
-
-                logger.info(f"Created user id={self.id}")
+            self.id = 0
 
         else:
             with open(config_file, "rb") as f:

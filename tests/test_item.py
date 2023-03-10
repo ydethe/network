@@ -17,6 +17,15 @@ class TestItem(unittest.TestCase):
         cls.ref_plaintext = ref_plaintext
         prepare_database(ref_plaintext)
 
+    def test_illicit_user_creation(self):
+        client = TestClient(app)
+
+        alice = User(config_file=Path("tests/alice.topsecret"))
+        challenge_str = alice.build_challenge()
+        r = client.post("/users/", json=alice.to_json(), headers={"Challenge": challenge_str})
+        assert r.status_code != 200
+        assert "Only an admin can create a user" in r.json()["detail"]
+
     def test_item_data(self):
         client = TestClient(app)
 
@@ -92,5 +101,5 @@ class TestItem(unittest.TestCase):
 if __name__ == "__main__":
     TestItem.setUpClass()
     a = TestItem()
-    # a.test_item_data()
-    a.test_item_errors()
+    a.test_item_data()
+    # a.test_item_errors()

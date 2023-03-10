@@ -7,6 +7,7 @@ from sqlalchemy import (
     Column,
     ForeignKey,
     Integer,
+    Boolean,
     String,
     DateTime,
     create_engine,
@@ -44,6 +45,8 @@ class DbUser(Base):
 
     #: Unique identifier of the session
     id = Column(Integer, primary_key=True, nullable=False)
+
+    admin = Column(Boolean, nullable=False, default=False)
 
     public_key = Column(String, nullable=False)
 

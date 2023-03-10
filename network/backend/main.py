@@ -26,6 +26,9 @@ app.include_router(share_router.router)
 
 
 class Server(uvicorn.Server):
+    def __init__(self, config: uvicorn.Config) -> None:
+        super().__init__(config)
+
     def install_signal_handlers(self):
         pass
 
@@ -63,6 +66,8 @@ def run_server(
     )
     server = Server(config=config)
 
+    server.should_exit = test
+
     with server.run_in_thread():
-        while not test:
+        while not server.should_exit:
             pass

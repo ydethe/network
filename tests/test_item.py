@@ -40,7 +40,7 @@ class TestItem(unittest.TestCase):
         r = client.delete(f"/item/{item_id}", headers={"Challenge": challenge_str})
         assert r.status_code == 200
 
-        data=alice.encrypt_for_db(TestItem.ref_plaintext.encode())
+        data = alice.encrypt_for_db(TestItem.ref_plaintext.encode())
         challenge_str = alice.build_challenge()
         r = client.post("/item/", json=data, headers={"Challenge": challenge_str})
         assert r.status_code == 200
@@ -83,7 +83,7 @@ class TestItem(unittest.TestCase):
         r = client.delete(f"/item/{item_id}", headers={"Challenge": challenge_str})
         assert r.status_code == 404
 
-        data=alice.encrypt_for_db(TestItem.ref_plaintext.encode())
+        data = alice.encrypt_for_db(TestItem.ref_plaintext.encode())
         challenge_str = alice.build_challenge()
         r = client.post("/item/", json=data, headers={"Challenge": challenge_str})
         assert r.status_code == 200
@@ -94,4 +94,3 @@ if __name__ == "__main__":
     a = TestItem()
     # a.test_item_data()
     a.test_item_errors()
-

@@ -30,7 +30,7 @@ def prepare_database(ref_plaintext: str = "Président de la République Françai
         session.commit()
         session.refresh(db_admin)
         admin.id = db_admin.id
-    admin.writeConfigurationFile(Path("tests/admin.topsecret"))
+    admin.to_topsecret_file(Path("tests/admin.topsecret"))
 
     client = TestClient(app)
 
@@ -39,14 +39,14 @@ def prepare_database(ref_plaintext: str = "Président de la République Françai
     r = client.post("/users/", json=alice.to_json(), headers={"Challenge": challenge_str})
     assert r.status_code == 200
     alice.id = r.json()["id"]
-    alice.writeConfigurationFile(Path("tests/alice.topsecret"))
+    alice.to_topsecret_file(Path("tests/alice.topsecret"))
 
     bob = User()
     challenge_str = admin.build_challenge()
     r = client.post("/users/", json=bob.to_json(), headers={"Challenge": challenge_str})
     assert r.status_code == 200
     bob.id = r.json()["id"]
-    bob.writeConfigurationFile(Path("tests/bob.topsecret"))
+    bob.to_topsecret_file(Path("tests/bob.topsecret"))
 
     data = alice.encrypt_for_db(ref_plaintext.encode())
 

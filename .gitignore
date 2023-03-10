@@ -4,6 +4,7 @@ htmldoc
 pdm.lock
 *.key
 *.topsecret
+*.public
 
 __pypackages__
 *.parq

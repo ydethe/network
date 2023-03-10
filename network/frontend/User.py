@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import List
 import struct
 from base64 import b64encode
+import json
 
 import requests
 from umbral import (
@@ -23,9 +24,10 @@ from .. import schemas
 
 
 class User(object):
-    """Creates a user, without writing it in the database. Only the keys are stored.
+    """Create a user
 
     Args:
+        server_url: URL of the server
         config_file: File to read to instanciate the user
 
     """
@@ -67,6 +69,17 @@ class User(object):
 
             logger.info(f"Loaded user id={self.id}")
 
+    def to_public_file(self, path: Path):
+        """Export **public** data to send to an admin for account creation
+
+        Args:
+            path: Path where the file will be created. Shall have a'.public' extension
+
+        """
+        data = self.to_json()
+        with open(path, "w") as f:
+            json.dump(data, f)
+
     def to_json(self) -> dict:
         """Seralize the user for record it in the database
 
@@ -93,7 +106,7 @@ class User(object):
             "time_updated": None,
         }
 
-    def writeConfigurationFile(self, path: Path):
+    def to_topsecret_file(self, path: Path):
         """Save user's information in a top secret file
 
         Args:

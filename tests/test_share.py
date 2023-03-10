@@ -120,5 +120,6 @@ class TestShare(unittest.TestCase):
 if __name__ == "__main__":
     TestShare.setUpClass()
     a = TestShare()
-    # a.test_legacy()
+    a.test_legacy()
     a.test_share()
+    a.test_share_errors()

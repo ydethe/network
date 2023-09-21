@@ -1,5 +1,5 @@
 htmldoc
-.pdm.toml
+.pdm-python
 *.db
 pdm.lock
 *.key

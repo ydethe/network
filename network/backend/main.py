@@ -3,7 +3,9 @@ import logging
 import contextlib
 import time
 import threading
+from pathlib import Path
 
+from sqlalchemy import create_engine
 import uvicorn
 from fastapi import FastAPI
 import typer
@@ -11,6 +13,7 @@ import typer
 from . import item_router, user_router, share_router
 from ..frontend.Admin import Admin
 from ..frontend.User import User
+from . import models
 
 
 tapp = typer.Typer()
@@ -46,6 +49,27 @@ class Server(uvicorn.Server):
             self.should_exit = True
             thread.join()
 
+@tapp.command()
+def create(key_path:Path=typer.Option(None,help="Where to save the private key"),admin:bool=typer.Option(False,help="Administrator flag")):
+    "Crate a new user"
+    db_uri = os.environ.get("DATABASE_URI", "sqlite:///tests/test_data.db")
+
+    logger = logging.getLogger("network_logger")
+    logger.info(f"Using {db_uri}")
+
+    user = User()
+    data = user.to_json()
+    db_admin = models.DbUser(
+        user=admin, public_key=data["public_key"], verifying_key=data["verifying_key"]
+    )
+    with models.con() as session:
+        session.add(db_admin)
+        session.commit()
+        session.refresh(db_admin)
+        user.id = db_admin.id
+    
+    if key_path is not None:
+        user.to_topsecret_file(key_path)
 
 @tapp.command()
 def run_server(
@@ -54,10 +78,23 @@ def run_server(
     workers: int = typer.Option(1, help="Number of workers"),
     test: bool = typer.Option(False, help="Flag to run the server for only one second"),
 ):
+    "Run server"
+    db_uri = os.environ.get("DATABASE_URI", "sqlite:///tests/test_data.db")
+
     logger = logging.getLogger("network_logger")
     logger.info(
         f"""Running app with arguments (root_path='{os.environ.get("ROOT_PATH", "")}', workers={workers}, reload={reload})"""
     )
+    logger.info(f"Using {db_uri}")
+
+    engine = create_engine(db_uri, echo=False)
+    target_metadata = models.Base.metadata
+    target_metadata.create_all(engine)
+
+    admin_key_path=Path("/app/admin.topsecret")
+    if not admin_key_path.exists():
+        create(admin=True, key_path=admin_key_path)
+
     config = uvicorn.Config(
         "network.backend.main:app",
         host="127.0.0.1",

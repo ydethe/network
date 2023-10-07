@@ -1,4 +1,4 @@
-# docker build -t network . --network=host
+# docker build -t network .
 # docker tag network:latest ydethe/network:latest
 # docker push ydethe/network:latest
 FROM python:3.9-bullseye

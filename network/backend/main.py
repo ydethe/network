@@ -9,6 +9,8 @@ from fastapi import FastAPI
 import typer
 
 from . import item_router, user_router, share_router
+from ..frontend.Admin import Admin
+from ..frontend.User import User
 
 
 tapp = typer.Typer()
@@ -52,7 +54,7 @@ def run_server(
     workers: int = typer.Option(1, help="Number of workers"),
     test: bool = typer.Option(False, help="Flag to run the server for only one second"),
 ):
-    logger = logging.getLogger(f"network_logger")
+    logger = logging.getLogger("network_logger")
     logger.info(
         f"""Running app with arguments (root_path='{os.environ.get("ROOT_PATH", "")}', workers={workers}, reload={reload})"""
     )

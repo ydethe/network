@@ -60,7 +60,7 @@ def create(key_path:Path=typer.Option(None,help="Where to save the private key")
     user = User()
     data = user.to_json()
     db_admin = models.DbUser(
-        user=admin, public_key=data["public_key"], verifying_key=data["verifying_key"]
+        admin=admin, public_key=data["public_key"], verifying_key=data["verifying_key"]
     )
     with models.con() as session:
         session.add(db_admin)
@@ -70,6 +70,7 @@ def create(key_path:Path=typer.Option(None,help="Where to save the private key")
     
     if key_path is not None:
         user.to_topsecret_file(key_path)
+        logger.info(f"Key generated {key_path}")
 
 @tapp.command()
 def run_server(

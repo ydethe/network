@@ -26,4 +26,4 @@ WORKDIR /app
 RUN mkdir -p log
 RUN find /app -name "*.whl" -exec pip install {} \;
 EXPOSE $PORT
-CMD network_server --port $PORT --workers $NB_WORKERS
+CMD network_server run-server --port $PORT --workers $NB_WORKERS

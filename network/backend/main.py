@@ -92,7 +92,7 @@ def run_server(
     target_metadata = models.Base.metadata
     target_metadata.create_all(engine)
 
-    admin_key_path=Path("/app/admin.topsecret")
+    admin_key_path=Path("admin.topsecret")
     if not admin_key_path.exists():
         create(admin=True, key_path=admin_key_path)
 

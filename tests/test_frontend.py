@@ -5,27 +5,33 @@ import uvicorn
 import requests
 
 from network.backend.main import Server
+from network.frontend.Admin import Admin
 from network.frontend.User import User
 
 
 class TestFrontend(unittest.TestCase):
-    def admin_create_user(self, server_url: str, user: User):
-        admin = User(server_url=server_url, config_file=Path("tests/admin.topsecret"))
-        challenge_str = admin.build_challenge()
-        r = requests.post(
-            f"{server_url}/users/", json=user.to_json(), headers={"Challenge": challenge_str}
+    def admin_create_user(self, server_url: str, public_file: Path):
+        import network.backend.models as md
+
+        admin = Admin(server_url=server_url)
+        data = admin.to_json()
+        db_admin = md.DbUser(
+            admin=True, public_key=data["public_key"], verifying_key=data["verifying_key"]
         )
-        if r.status_code != 200:
-            raise AssertionError(r.json()["detail"])
+        with md.con() as session:
+            session.add(db_admin)
+            session.commit()
+            session.refresh(db_admin)
+            admin.id = db_admin.id
 
-        id = r.json()["id"]
+        user_id = admin.createUser(public_file)
 
-        return id
+        return user_id
 
     def test_frontend(
         self,
         host: str = "127.0.0.1",
-        port: int = 3035,
+        port: int = 3100,
         ref_plaintext: str = "Président de la République Française",
     ):
         server_url = f"http://{host}:{port}"
@@ -45,11 +51,13 @@ class TestFrontend(unittest.TestCase):
         with server.run_in_thread():
             # User creation
             eve = User(server_url=server_url)
-            eve.writeConfigurationFile(id_file)
+            eve.to_topsecret_file(id_file)
+            eve_public = Path("tests/eve.public")
+            eve.to_public_file(eve_public)
 
             # Admin validates user sign up
-            eve.id = self.admin_create_user(server_url=server_url, user=eve)
-            eve.writeConfigurationFile(id_file)
+            eve.id = self.admin_create_user(server_url=server_url, public_file=eve_public)
+            eve.to_topsecret_file(id_file)
 
             # User reloading through the .topsecret file
             eve = User(server_url=server_url, config_file=id_file)

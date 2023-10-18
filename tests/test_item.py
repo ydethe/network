@@ -101,5 +101,6 @@ class TestItem(unittest.TestCase):
 if __name__ == "__main__":
     TestItem.setUpClass()
     a = TestItem()
+    a.test_illicit_user_creation()
     a.test_item_data()
-    # a.test_item_errors()
+    a.test_item_errors()

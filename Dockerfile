@@ -1,4 +1,4 @@
-# docker build -t network . --network=host
+# docker build -t network .
 # docker tag network:latest ydethe/network:latest
 # docker push ydethe/network:latest
 FROM python:3.9-bullseye
@@ -26,4 +26,4 @@ WORKDIR /app
 RUN mkdir -p log
 RUN find /app -name "*.whl" -exec pip install {} \;
 EXPOSE $PORT
-CMD network_server --port $PORT --workers $NB_WORKERS
+CMD network_server run-server --port $PORT --workers $NB_WORKERS

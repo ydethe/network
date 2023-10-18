@@ -27,4 +27,5 @@ def create_user(
         raise HTTPException(status_code=403, detail="Only an admin can create a user")
 
     new_user = crud.create_user(db=db, user=user)
+
     return new_user

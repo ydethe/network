@@ -98,7 +98,7 @@ def run_server(
 
     config = uvicorn.Config(
         "network.backend.main:app",
-        host="127.0.0.1",
+        host="0.0.0.0",
         port=port,
         log_level="info",
         workers=workers,

@@ -1,36 +1,45 @@
 version: "3.4"
 
-# CREATE ROLE network LOGIN PASSWORD 'network';
-# GRANT ALL PRIVILEGES ON DATABASE network TO network;
-
 services:
   network:
     image: ydethe/network:latest
-    ports:
-      - "3034:3034"
+    restart: unless-stopped
+    depends_on:
+      network_db:
+        condition: service_healthy
     environment:
-      ROOT_PATH: /v1
-      DATABASE_URI: postgresql+psycopg2://network:network@localhost/network
-      HOST: https://network.johncloud.fr
-      NB_WORKERS: 4
+      ROOT_PATH: $ROOT_PATH
+      DATABASE_URI: postgresql+psycopg2://$POSTGRES_USER:$POSTGRES_PASSWORD@$COMPOSE_PROJECT_NAME-network_db-1/$POSTGRES_DB
+      HOST: $HOST
+      NB_WORKERS: $NB_WORKERS
       PORT: 3034
-    network_mode: host
-  # db:
-  #   image: postgres:11.3
-  #   restart: unless-stopped
-  #   env_file:
-  #     - .env
-  #   environment:
-  #     - POSTGRES_USER=${DATABASE_USER:-baserow}
-  #     - POSTGRES_PASSWORD=${DATABASE_PASSWORD:?}
-  #     - POSTGRES_DB=${DATABASE_NAME:-baserow}
-  #   healthcheck:
-  #     test: [ "CMD-SHELL", "su postgres -c \"pg_isready -U ${DATABASE_USER:-baserow}\"" ]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-  #   volumes:
-  #     - pgdata:/var/lib/postgresql/data
-  #   network_mode: host
-# volumes:
-#   pgdata:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.network.rule=Host(`$HOST`)"
+      - "traefik.http.routers.network.entrypoints=websecure"
+      - "traefik.http.routers.network.tls.certresolver=letsencrypt"
+      - "traefik.http.services.network.loadbalancer.server.port=3034"
+      - "traefik.http.middlewares.network-stripprefix.stripprefix.prefixes=$ROOT_PATH"
+      - "traefik.http.routers.network.middlewares=network-stripprefix@docker"
+    
+  network_db:
+    image: postgres:11.3
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_USER: $POSTGRES_USER
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+      POSTGRES_DB: $POSTGRES_DB
+    volumes:
+      - $JOHNCLOUD_ROOT/network/pgdata:/var/lib/postgresql/data
+    labels:
+      - "traefik.enable=false"
+      
+networks:
+  default:
+    external: true
+    name: $TRAEFIK_NETWORK

@@ -1,6 +1,6 @@
-# docker build -t network .
-# docker tag network:latest ydethe/network:latest
-# docker push ydethe/network:latest
+# sudo docker build -t network .
+# sudo docker tag network:latest ydethe/network:latest
+# sudo docker push ydethe/network:latest
 FROM python:3.9-bullseye
 
 ARG DATABASE_URI

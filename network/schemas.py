@@ -34,11 +34,11 @@ class CfragModel(BaseModel):
 
 
 class ItemModel(BaseModel):
-    id: Optional[int]
-    user_id: Optional[int]
+    id: Optional[int] = None
+    user_id: Optional[int] = None
     encrypted_data: str
-    cfrag: Optional[str]
-    sender_pkey: Optional[str]
+    cfrag: Optional[str] = None
+    sender_pkey: Optional[str] = None
 
     @classmethod
     def fromORM(cls, obj: models.Item) -> "ItemModel":
@@ -92,11 +92,11 @@ class ItemModel(BaseModel):
 
 
 class UserModel(BaseModel):
-    id: Optional[int]
+    id: Optional[int] = None
     public_key: str
     verifying_key: str
-    time_created: Optional[datetime]
-    time_updated: Optional[datetime]
+    time_created: Optional[datetime] = None
+    time_updated: Optional[datetime] = None
 
     @classmethod
     def fromORM(cls, obj: models.DbUser) -> "UserModel":

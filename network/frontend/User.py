@@ -288,7 +288,9 @@ class User(object):
             f"{self.server_url}/item/", json=data, headers={"Challenge": challenge_str}
         )
         if r.status_code != 200:
-            raise AssertionError(r.json()["detail"])
+            exc = r.json()["detail"]
+            msg = repr(exc[0])
+            raise AssertionError(msg)
 
         data = r.json()
 

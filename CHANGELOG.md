@@ -6,9 +6,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
-## [0.1.0](https://github.com/ydethe/network/releases/tag/0.1.0) - 2023-11-07
+## [0.1.0](https://github.com/ydethe/network/releases/tag/v0.1.00.1.0) - 2023-11-07
 
-<small>[Compare with first commit](https://github.com/ydethe/network/compare/868c420d4d7b250758586ddfa01d3986064f52a4...0.1.0)</small>
+<small>[Compare with first commit](https://github.com/ydethe/network/compare/868c420d4d7b250758586ddfa01d3986064f52a4...v0.1.0)</small>
 
 ### Added
 

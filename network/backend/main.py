@@ -65,8 +65,8 @@ def create(
     db_admin = models.DbUser(
         admin=admin, public_key=data["public_key"], verifying_key=data["verifying_key"]
     )
-    models.get_connection()
-    with models.con() as session:
+    con = models.get_connection()
+    with con() as session:
         session.add(db_admin)
         session.commit()
         session.refresh(db_admin)

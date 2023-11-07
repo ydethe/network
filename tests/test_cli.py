@@ -7,7 +7,7 @@ runner = CliRunner()
 
 
 def test_app():
-    result = runner.invoke(tapp, ["--port", 3035, "--test"])
+    runner.invoke(tapp, ["--port", 3035, "--test"])
 
 
 if __name__ == "__main__":

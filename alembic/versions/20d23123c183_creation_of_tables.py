@@ -1,7 +1,7 @@
 """Creation of tables
 
 Revision ID: 20d23123c183
-Revises: 
+Revises:
 Create Date: 2023-03-09 19:58:11.143014
 
 """

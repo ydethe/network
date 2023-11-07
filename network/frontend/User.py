@@ -33,11 +33,11 @@ class User(object):
     """
 
     def __init__(self, server_url: str = "", config_file: Path = None):
-        logger = logging.getLogger(f"network_logger")
+        logger = logging.getLogger("network_logger")
 
         self.server_url = server_url
 
-        if not config_file is None:
+        if config_file is not None:
             config_file = config_file.expanduser().resolve()
         if config_file is None or not config_file.exists():
             # Key for encryption
@@ -211,7 +211,7 @@ class User(object):
         """
         if item.cfrag is None and item.sender_pkey is None:
             cleartext = decrypt_original(self.private_key, item.capsule, item.ciphertext)
-        elif not item.cfrag is None and not item.sender_pkey is None:
+        elif item.cfrag is not None and item.sender_pkey is not None:
             cleartext = pre.decrypt_reencrypted(
                 receiving_sk=self.private_key,
                 delegating_pk=item.sender_pkey,
@@ -220,7 +220,7 @@ class User(object):
                 ciphertext=item.ciphertext,
             )
         else:
-            raise AssertionError(f"cfrag and sender_pkey shall be simultaneously set or unset")
+            raise AssertionError("cfrag and sender_pkey shall be simultaneously set or unset")
 
         return cleartext
 

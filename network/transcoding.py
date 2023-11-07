@@ -23,7 +23,8 @@ def datetime_to_challenge(dt: datetime) -> Tuple[str, str]:
 
 
 def challenge_to_datetime(b64_hash: str) -> dict:
-    """Process the base64 data of a challenge to get the original datetime object and its string represntation
+    """Process the base64 data of a challenge to get the original
+    datetime object and its string representation
 
     Args:
         b64_hash: base64 data of the challenge
@@ -41,7 +42,7 @@ def challenge_to_datetime(b64_hash: str) -> dict:
 
         res = {"status": 200, "iso": sdt, "datetime": dt}
 
-    except BaseException as e:
+    except BaseException:
         res = {"status": 401, "message": "Impossible to get timestamp from challenge"}
 
     return res

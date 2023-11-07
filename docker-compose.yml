@@ -21,7 +21,7 @@ services:
       - "traefik.http.services.network.loadbalancer.server.port=3034"
       - "traefik.http.middlewares.network-stripprefix.stripprefix.prefixes=$ROOT_PATH"
       - "traefik.http.routers.network.middlewares=network-stripprefix@docker"
-    
+
   network_db:
     image: postgres:11.3
     restart: unless-stopped
@@ -38,7 +38,7 @@ services:
       - $JOHNCLOUD_ROOT/network/pgdata:/var/lib/postgresql/data
     labels:
       - "traefik.enable=false"
-      
+
 networks:
   default:
     external: true

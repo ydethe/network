@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, Union
+from typing import Optional
 
 from pydantic import BaseModel
 from umbral import PublicKey, VerifiedCapsuleFrag, Capsule

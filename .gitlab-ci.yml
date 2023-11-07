@@ -16,7 +16,7 @@ before_script:
   - ssh-add <(echo "$SSH_PRIVATE_KEY")
   - mkdir -p ~/.ssh
   - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
-    
+
 test:
   stage: test
   script:
@@ -52,4 +52,3 @@ deploy_prod:
     url: https://network.johncloud.fr/v1/docs
   only:
     - master
-    

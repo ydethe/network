@@ -1,7 +1,7 @@
 repos:
 - hooks:
   - id: check-changelog
-    args: [--version-regex, '<a href="[^"]+">(?P<version>[^<]+)', --bump-latest, --template,keepachangelog]
+    args: [--version-regex, '<a href="[^"]+">(?P<version>[^<]+)', --bump-latest, --template, keepachangelog]
   repo: https://gitlab.com/ydethe/pdm-copier.git
   rev: v0.5.0
 

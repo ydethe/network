@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 import unittest
 
@@ -7,9 +6,7 @@ from fastapi.testclient import TestClient
 from network.frontend.User import User
 from network.backend.main import app
 from network.schemas import ItemModel
-
-sys.path.insert(0, str(Path(__file__).parent))
-from prepare import prepare_database
+from network.testing import prepare_database
 
 
 class TestShare(unittest.TestCase):
@@ -121,5 +118,5 @@ if __name__ == "__main__":
     TestShare.setUpClass()
     a = TestShare()
     a.test_legacy()
-    a.test_share()
-    a.test_share_errors()
+    # a.test_share()
+    # a.test_share_errors()

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from .. import schemas
 from . import crud
-from .models import get_db, con, DbUser
+from .models import get_db, get_connection, DbUser
 from .auth_depend import challenge_auth
 
 
@@ -20,8 +20,9 @@ def create_user(
     db: Session = Depends(get_db),
     user_id: int = Depends(challenge_auth),
 ):
+    con = get_connection()
     with con() as session:
-        db_issuer: DbUser = session.query(DbUser).filter(DbUser.id == user_id).first()  # type: ignore
+        db_issuer: DbUser = session.query(DbUser).filter(DbUser.id == user_id).first()
 
     if not db_issuer.admin:
         raise HTTPException(status_code=403, detail="Only an admin can create a user")

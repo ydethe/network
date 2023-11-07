@@ -2,7 +2,6 @@ from pathlib import Path
 import unittest
 
 import uvicorn
-import requests
 
 from network.backend.main import Server
 from network.frontend.Admin import Admin
@@ -18,7 +17,8 @@ class TestFrontend(unittest.TestCase):
         db_admin = md.DbUser(
             admin=True, public_key=data["public_key"], verifying_key=data["verifying_key"]
         )
-        with md.con() as session:
+        con = md.get_connection()
+        with con() as session:
             session.add(db_admin)
             session.commit()
             session.refresh(db_admin)
@@ -74,7 +74,7 @@ class TestFrontend(unittest.TestCase):
 
             eve.deleteItemFromDatabase(item_id)
             l_id = eve.loadItemIdList()
-            assert not item_id in l_id
+            assert item_id not in l_id
 
 
 if __name__ == "__main__":

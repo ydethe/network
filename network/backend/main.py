@@ -11,7 +11,6 @@ from fastapi import FastAPI
 import typer
 
 from . import item_router, user_router, share_router
-from ..frontend.Admin import Admin
 from ..frontend.User import User
 from . import models
 
@@ -49,8 +48,12 @@ class Server(uvicorn.Server):
             self.should_exit = True
             thread.join()
 
+
 @tapp.command()
-def create(key_path:Path=typer.Option(None,help="Where to save the private key"),admin:bool=typer.Option(False,help="Administrator flag")):
+def create(
+    key_path: Path = typer.Option(None, help="Where to save the private key"),
+    admin: bool = typer.Option(False, help="Administrator flag"),
+):
     "Crate a new user"
     db_uri = os.environ.get("DATABASE_URI", "sqlite:///tests/test_data.db")
 
@@ -62,15 +65,17 @@ def create(key_path:Path=typer.Option(None,help="Where to save the private key")
     db_admin = models.DbUser(
         admin=admin, public_key=data["public_key"], verifying_key=data["verifying_key"]
     )
+    models.get_connection()
     with models.con() as session:
         session.add(db_admin)
         session.commit()
         session.refresh(db_admin)
         user.id = db_admin.id
-    
+
     if key_path is not None:
         user.to_topsecret_file(key_path)
         logger.info(f"Key generated {key_path}")
+
 
 @tapp.command()
 def run_server(
@@ -84,7 +89,8 @@ def run_server(
 
     logger = logging.getLogger("network_logger")
     logger.info(
-        f"""Running app with arguments (root_path='{os.environ.get("ROOT_PATH", "")}', workers={workers}, reload={reload})"""
+        f"""Running app with arguments (root_path='{os.environ.get("ROOT_PATH", "")}',"""
+        "workers={workers}, reload={reload})"
     )
     logger.info(f"Using {db_uri}")
 
@@ -92,7 +98,7 @@ def run_server(
     target_metadata = models.Base.metadata
     target_metadata.create_all(engine)
 
-    admin_key_path=Path("admin.topsecret")
+    admin_key_path = Path("admin.topsecret")
     if not admin_key_path.exists():
         create(admin=True, key_path=admin_key_path)
 

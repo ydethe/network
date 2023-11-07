@@ -25,7 +25,8 @@ def prepare_database(ref_plaintext: str = "Président de la République Françai
     db_admin = models.DbUser(
         admin=True, public_key=data["public_key"], verifying_key=data["verifying_key"]
     )
-    with models.con() as session:
+    con = models.get_connection()
+    with con() as session:
         session.add(db_admin)
         session.commit()
         session.refresh(db_admin)

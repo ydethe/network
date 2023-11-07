@@ -1,7 +1,6 @@
 from base64 import b64decode
 from datetime import datetime, timedelta
 import os
-import logging
 
 from sqlalchemy import (
     Column,
@@ -17,21 +16,26 @@ from sqlalchemy.orm import declarative_base, Session, relationship, sessionmaker
 from umbral import Signature
 from umbral.hashing import Hash
 
+from .. import logger
 from ..transcoding import challenge_to_datetime, decodeKey
 
 
-logger = logging.getLogger("network_logger")
-
 Base = declarative_base()
 
-db_uri = os.environ.get("DATABASE_URI", "sqlite:///tests/test_data.db")
-logger.info(f"Using database {db_uri}")
 
-engine = create_engine(db_uri, echo=False, future=True)
-con = sessionmaker(engine)
+def get_connection():
+    db_uri = os.environ.get("DATABASE_URI", "sqlite:///tests/test_data.db")
+    logger.info(f"Using database {db_uri}")
+
+    engine = create_engine(db_uri, echo=False, future=True)
+    con = sessionmaker(engine)
+
+    return con
 
 
 def get_db():
+    con = get_connection()
+    engine = con.kw["bind"]
     db = Session(engine)
     try:
         yield db
@@ -64,12 +68,13 @@ class DbUser(Base):
     def check_challenge(
         self, session: Session, b64_hash: str, b64_sign: str, timeout: float
     ) -> dict:
-        """Check if the proposed challenge is valid. The challenge consists in b64_hash and b64_sign.
+        """Check if the proposed challenge is valid.
+        The challenge consists in b64_hash and b64_sign.
         The conditions to succeed in checking the challenge are :
 
         * the signature matches the user's verifying key
         * a datetime object can be retrieved from b64_hash
-        * this datetime object is different from the last challenge datetime (stored in the database)
+        * this datetime object is different from the last challenge datetime (stored in database)
         * this datetime object is at most timeout seconds before now
 
         The returned dictionary has the following keys:
@@ -94,12 +99,12 @@ class DbUser(Base):
             return challenge_data
 
         if (
-            not self.time_last_challenge is None
+            self.time_last_challenge is not None
             and challenge_data["datetime"] == self.time_last_challenge
         ):
             response = {
                 "status": 401,
-                "message": f"Trying to reuse a challenge",
+                "message": "Trying to reuse a challenge",
             }
             return response
 

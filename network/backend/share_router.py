@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from .. import schemas
 from . import crud
-from .models import get_db, con, DbUser, Item
+from .models import get_db, get_connection, DbUser, Item
 from .auth_depend import challenge_auth
 
 
@@ -23,10 +23,11 @@ def post_reencrypted_data(
     db: Session = Depends(get_db),
     user_id: int = Depends(challenge_auth),
 ):
+    con = get_connection()
     with con() as session:
         db_item = session.query(Item).filter(Item.id == item_id).first()
-        db_sender: DbUser = session.query(DbUser).filter(DbUser.id == user_id).first()  # type: ignore
-        db_recipient: DbUser = session.query(DbUser).filter(DbUser.id == recipient_id).first()  # type: ignore
+        db_sender: DbUser = session.query(DbUser).filter(DbUser.id == user_id).first()
+        db_recipient: DbUser = session.query(DbUser).filter(DbUser.id == recipient_id).first()
 
     if db_item is None:
         raise HTTPException(status_code=404, detail=f"Item {item_id} not found")

@@ -1,0 +1,53 @@
+repos:
+# - hooks:
+#   - id: check-changelog
+#     args: [--version-regex, '<a href="[^"]+">(?P<version>[^<]+)', --bump-latest]
+#   repo: https://gitlab.com/ydethe/pdm-copier.git
+#   rev: v0.5.0
+
+- hooks:
+  - entry: found Copier update rejection files; review them and remove them
+    files: \.rej$
+    id: forbidden-files
+    language: fail
+    name: forbidden .rej files
+  repo: local
+
+- hooks:
+  - id: check-case-conflict
+  - id: check-merge-conflict
+  - id: mixed-line-ending
+  - id: trailing-whitespace
+  repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.4.0
+
+- hooks:
+  - additional_dependencies:
+    - click==8.0.4
+    args:
+    - --config
+    - pyproject.toml
+    id: black
+  repo: https://github.com/psf/black
+  rev: 22.3.0
+
+- hooks:
+  - additional_dependencies:
+    - black==22.3.0
+    - click==8.0.4
+    args:
+    - -l
+    - '100'
+    id: blacken-docs
+  repo: https://github.com/adamchainz/blacken-docs
+  rev: 1.13.0
+
+- hooks:
+  - args:
+    - --fix
+    - --exit-non-zero-on-fix
+    - --config
+    - pyproject.toml
+    id: ruff
+  repo: https://github.com/charliermarsh/ruff-pre-commit
+  rev: v0.0.263

@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 import unittest
 
@@ -6,9 +5,7 @@ from fastapi.testclient import TestClient
 
 from network.frontend.User import User
 from network.backend.main import app
-
-sys.path.insert(0, str(Path(__file__).parent))
-from prepare import prepare_database
+from network.testing import prepare_database
 
 
 class TestItem(unittest.TestCase):

@@ -15,14 +15,14 @@ router = APIRouter(prefix="/users", tags=["users"])
     response_model=schemas.UserModel,
     description="Creates a user",
 )
-def create_user(
+async def create_user(
     user: schemas.UserModel,
     db: Session = Depends(get_db),
     user_id: int = Depends(challenge_auth),
 ):
     con = get_connection()
-    with con() as session:
-        db_issuer: DbUser = session.query(DbUser).filter(DbUser.id == user_id).first()
+    async with con() as session:
+        db_issuer: DbUser = await session.query(DbUser).filter(DbUser.id == user_id).first()
 
     if not db_issuer.admin:
         raise HTTPException(status_code=403, detail="Only an admin can create a user")

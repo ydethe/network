@@ -46,3 +46,19 @@ logger.setLevel(os.environ.get("LOGLEVEL", "INFO").upper())
 
 stream_handler = RichHandler()
 logger.addHandler(stream_handler)
+
+
+def get_network_version() -> str:
+    import importlib.metadata as im
+
+    try:
+        # Production mode
+        version = im.version("network")
+    except BaseException:
+        # Development mode
+        version = "dev"
+
+    return version
+
+
+__version__ = get_network_version()

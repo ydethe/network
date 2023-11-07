@@ -9,8 +9,8 @@ from sqlalchemy import (
     Boolean,
     String,
     DateTime,
-    create_engine,
 )
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.sql import func
 from sqlalchemy.orm import declarative_base, Session, relationship, sessionmaker
 from umbral import Signature
@@ -24,11 +24,12 @@ Base = declarative_base()
 
 
 def get_connection():
-    db_uri = os.environ.get("DATABASE_URI", "sqlite:///tests/test_data.db")
-    logger.info(f"Using database {db_uri}")
+    db_uri = os.environ.get("DATABASE_URI", "sqlite+aiosqlite:///tests/test_data.db")
 
-    engine = create_engine(db_uri, echo=False, future=True)
-    con = sessionmaker(engine)
+    engine = create_async_engine(db_uri, echo=False, future=True)
+    con = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+
+    logger.info(f"Using database {db_uri}")
 
     return con
 
@@ -65,7 +66,7 @@ class DbUser(Base):
     #: List of the related records in items table
     items = relationship("Item", back_populates="user")
 
-    def check_challenge(
+    async def check_challenge(
         self, session: Session, b64_hash: str, b64_sign: str, timeout: float
     ) -> dict:
         """Check if the proposed challenge is valid.
@@ -124,7 +125,7 @@ class DbUser(Base):
 
         if signature.verify_digest(vkey, hash):
             self.time_last_challenge = challenge_data["datetime"]
-            session.commit()
+            await session.commit()
             response = {
                 "status": 200,
                 "message": "OK",

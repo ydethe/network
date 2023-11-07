@@ -39,7 +39,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = os.environ.get("DATABASE_URI", "sqlite:///tests/test_data.db")
+    url = os.environ.get("DATABASE_URI", "sqlite+aiosqlite:///tests/test_data.db")
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -59,7 +59,7 @@ def run_migrations_online() -> None:
 
     """
     cfg = config.get_section(config.config_ini_section)
-    cfg["sqlalchemy.url"] = os.environ.get("DATABASE_URI", "sqlite:///tests/test_data.db")
+    cfg["sqlalchemy.url"] = os.environ.get("DATABASE_URI", "sqlite+aiosqlite:///tests/test_data.db")
 
     connectable = engine_from_config(
         cfg,

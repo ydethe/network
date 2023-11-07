@@ -6,7 +6,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
-## [0.1.0](https://github.com/ydethe/network/releases/tag/v0.1.00.1.0) - 2023-11-07
+## [v0.1.1](https://github.com/ydethe/network/releases/tag/v0.1.1) - 2023-11-07
+
+<small>[Compare with v0.1.0](https://github.com/ydethe/network/compare/v0.1.0...v0.1.1)</small>
+
+### Fixed
+
+- Fixed models.get_connection ([28bb5c0](https://github.com/ydethe/network/commit/28bb5c0bf94dfe461d7e927de1f4d370390cb6be) by Yann de The).
+
+## [v0.1.0](https://github.com/ydethe/network/releases/tag/v0.1.0) - 2023-11-07
 
 <small>[Compare with first commit](https://github.com/ydethe/network/compare/868c420d4d7b250758586ddfa01d3986064f52a4...v0.1.0)</small>
 

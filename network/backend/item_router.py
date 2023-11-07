@@ -16,7 +16,7 @@ router = APIRouter(prefix="/item", tags=["item"])
     response_model=schemas.ItemModel,
     description="Retrive one item data for user",
 )
-def read_item_data(
+async def read_item_data(
     request: Request,
     item_id: int = Path(description="ID of the item to retrieve"),
     db: Session = Depends(get_db),
@@ -32,7 +32,7 @@ def read_item_data(
     "/{item_id}",
     description="Delete one item data for user",
 )
-def delete_item_data(
+async def delete_item_data(
     request: Request,
     item_id: int = Path(description="ID of the item to retrieve"),
     db: Session = Depends(get_db),
@@ -48,7 +48,7 @@ def delete_item_data(
     response_model=List[int],
     description="Retrive the list of item data for user",
 )
-def list_items(
+async def list_items(
     request: Request,
     db: Session = Depends(get_db),
     user_id: int = Depends(challenge_auth),
@@ -62,7 +62,7 @@ def list_items(
     response_model=schemas.ItemModel,
     description="Creates one item data for user",
 )
-def create_item(
+async def create_item(
     request: Request,
     item: schemas.ItemModel = None,
     db: Session = Depends(get_db),

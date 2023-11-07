@@ -4,16 +4,17 @@ import contextlib
 import time
 import threading
 from pathlib import Path
+from asyncio import run as aiorun
 
-from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import create_async_engine
 import uvicorn
 from fastapi import FastAPI
 import typer
 
+from .. import get_network_version
 from . import item_router, user_router, share_router
 from ..frontend.User import User
 from . import models
-
 
 tapp = typer.Typer()
 
@@ -21,7 +22,7 @@ app = FastAPI(
     root_path=os.environ.get("ROOT_PATH", ""),
     title="Network API",
     description="API pour accéder à l'annuaire des contacts",
-    version="0.1.0",
+    version=get_network_version(),
 )
 
 app.include_router(item_router.router)
@@ -54,18 +55,15 @@ def create(
     key_path: Path = typer.Option(None, help="Where to save the private key"),
     admin: bool = typer.Option(False, help="Administrator flag"),
 ):
-    "Crate a new user"
-    db_uri = os.environ.get("DATABASE_URI", "sqlite:///tests/test_data.db")
-
+    "Create a new user"
     logger = logging.getLogger("network_logger")
-    logger.info(f"Using {db_uri}")
 
     user = User()
     data = user.to_json()
     db_admin = models.DbUser(
         admin=admin, public_key=data["public_key"], verifying_key=data["verifying_key"]
     )
-    con = models.get_connection()
+    con = models.get_connection(async_engine=False)
     with con() as session:
         session.add(db_admin)
         session.commit()
@@ -85,35 +83,40 @@ def run_server(
     test: bool = typer.Option(False, help="Flag to run the server for only one second"),
 ):
     "Run server"
-    db_uri = os.environ.get("DATABASE_URI", "sqlite:///tests/test_data.db")
 
-    logger = logging.getLogger("network_logger")
-    logger.info(
-        f"""Running app with arguments (root_path='{os.environ.get("ROOT_PATH", "")}',"""
-        "workers={workers}, reload={reload})"
-    )
-    logger.info(f"Using {db_uri}")
+    async def _run_server():
+        db_uri = os.environ.get("DATABASE_URI", "sqlite+aiosqlite:///tests/test_data.db")
 
-    engine = create_engine(db_uri, echo=False)
-    target_metadata = models.Base.metadata
-    target_metadata.create_all(engine)
+        logger = logging.getLogger("network_logger")
+        logger.info(
+            f"""Running app with arguments (root_path='{os.environ.get("ROOT_PATH", "")}',"""
+            f"workers={workers}, reload={reload})"
+        )
+        logger.info(f"Using {db_uri}")
 
-    admin_key_path = Path("admin.topsecret")
-    if not admin_key_path.exists():
-        create(admin=True, key_path=admin_key_path)
+        engine = create_async_engine(db_uri, echo=False)
+        target_metadata = models.Base.metadata
+        async with engine.begin() as conn:
+            await conn.run_sync(target_metadata.create_all)
 
-    config = uvicorn.Config(
-        "network.backend.main:app",
-        host="0.0.0.0",
-        port=port,
-        log_level="info",
-        workers=workers,
-        reload=reload,
-    )
-    server = Server(config=config)
+        admin_key_path = Path("admin.topsecret")
+        if not admin_key_path.exists():
+            create(admin=True, key_path=admin_key_path)
 
-    server.should_exit = test
+        config = uvicorn.Config(
+            "network.backend.main:app",
+            host="0.0.0.0",
+            port=port,
+            log_level="info",
+            workers=workers,
+            reload=reload,
+        )
+        server = Server(config=config)
 
-    with server.run_in_thread():
-        while not server.should_exit:
-            pass
+        server.should_exit = test
+
+        with server.run_in_thread():
+            while not server.should_exit:
+                pass
+
+    aiorun(_run_server())

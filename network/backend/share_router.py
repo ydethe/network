@@ -15,7 +15,7 @@ router = APIRouter(prefix="/share", tags=["share"])
     response_model=schemas.ItemModel,
     description="Creates one item data for user",
 )
-def post_reencrypted_data(
+async def post_reencrypted_data(
     request: Request,
     item_id: int,
     recipient_id: int,
@@ -24,10 +24,10 @@ def post_reencrypted_data(
     user_id: int = Depends(challenge_auth),
 ):
     con = get_connection()
-    with con() as session:
+    async with con() as session:
         db_item = session.query(Item).filter(Item.id == item_id).first()
-        db_sender: DbUser = session.query(DbUser).filter(DbUser.id == user_id).first()
-        db_recipient: DbUser = session.query(DbUser).filter(DbUser.id == recipient_id).first()
+        db_sender: DbUser = await session.query(DbUser).filter(DbUser.id == user_id).first()
+        db_recipient: DbUser = await session.query(DbUser).filter(DbUser.id == recipient_id).first()
 
     if db_item is None:
         raise HTTPException(status_code=404, detail=f"Item {item_id} not found")

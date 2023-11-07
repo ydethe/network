@@ -17,7 +17,7 @@ class TestFrontend(unittest.TestCase):
         db_admin = md.DbUser(
             admin=True, public_key=data["public_key"], verifying_key=data["verifying_key"]
         )
-        con = md.get_connection()
+        con = md.get_connection(async_engine=False)
         with con() as session:
             session.add(db_admin)
             session.commit()

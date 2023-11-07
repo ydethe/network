@@ -68,8 +68,8 @@ class ChallengeAuthentication(object):
         b64_sign = response["b64_sign"]
 
         con = get_connection()
-        with con() as session:
-            db_user: DbUser = session.query(DbUser).filter(DbUser.id == user_id).first()
+        async with con() as session:
+            db_user: DbUser = await session.query(DbUser).filter(DbUser.id == user_id).first()
             if db_user is None:
                 raise HTTPException(
                     status_code=401, detail="The user making the challenge could not be found"
